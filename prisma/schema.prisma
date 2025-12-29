@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User
+model User {
+  id             String   @id @default(cuid())
+  name           String?
+  email          String?  @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+  username       String?  @unique
+  role           String   @default("member") // member | admin
+  createdAt      DateTime @default(now())
+  profile        Profile?
+  createdInvites Invite[] @relation("CreatedInvites")
+  usedInvites    Invite[] @relation("UsedInvites")
+
+  // OAuth accounts
+  accounts Account[]
+  sessions Session[]
+}
+
+// Profile
+model Profile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  displayName     String?
+  bio             String?
+  avatarUrl       String?
+  bannerUrl       String?
+  backgroundType  String // color | gradient | image | video
+  backgroundValue String // hex | css gradient | image url | mp4
+  themePreset     String
+  blurBackground  Boolean @default(false)
+  showViews       Boolean @default(true)
+  views           Int     @default(0)
+
+  // Socials
+  socialSoundcloud String?
+  socialYoutube    String?
+  socialInstagram  String?
+  socialDiscord    String?
+
+  createdAt DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id])
+  links       Link[]
+  musicEmbeds MusicEmbed[]
+  tracks      Track[]
+  videos      Video[]
+}
+
+// Track (Uploaded via Cobalt)
+model Track {
+  id        String   @id @default(cuid())
+  profileId String
+  title     String
+  artist    String?
+  coverUrl  String?
+  streamUrl String // Direct URL from Cobalt or processed
+  sourceUrl String? // Original SoundCloud URL
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+// Link
+model Link {
+  id        String   @id @default(cuid())
+  profileId String
+  title     String
+  url       String
+  icon      String?
+  order     Int
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+// MusicEmbed
+model MusicEmbed {
+  id        String  @id @default(cuid())
+  profileId String
+  type      String // soundcloud | spotify | youtube
+  embedUrl  String
+  autoplay  Boolean @default(false)
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+// Video
+model Video {
+  id           String   @id @default(cuid())
+  profileId    String
+  title        String
+  description  String?
+  fileName     String // Original file name
+  mimeType     String // e.g. video/mp4, video/webm
+  fileSize     Int // Size in bytes
+  duration     Float? // Duration in seconds
+  url          String // Cloudflare R2 URL
+  thumbnailUrl String? // Optional thumbnail URL
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+// OAuth Account
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// Session
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Invite
+model Invite {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  createdBy String // userId of admin who created the invite
+  usedBy    String? // userId of user who used the invite
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  // Relations
+  creator User  @relation("CreatedInvites", fields: [createdBy], references: [id], onDelete: Cascade)
+  user    User? @relation("UsedInvites", fields: [usedBy], references: [id])
+
+  @@index([createdBy])
+  @@index([usedBy])
+}
+
+// Verification Token
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
