@@ -77,7 +77,8 @@ export const authOptions: NextAuthOptions = {
         try {
           const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
           if (user.email === adminEmail) {
-            await prisma.user.update({
+            // Use updateMany to avoid error if user doesn't exist yet (first-time login)
+            await prisma.user.updateMany({
               where: { email: user.email },
               data: { role: "admin" }
             });
@@ -89,11 +90,11 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
-      if (url.startsWith(baseUrl)) return url
-      return baseUrl
+      // Always redirect to dashboard for now to ensure user gets there
+      if (url.includes("/login") || url === baseUrl) {
+        return `${baseUrl}/dashboard`
+      }
+      return url.startsWith(baseUrl) ? url : baseUrl
     },
     async jwt({ token, user, account, trigger, session }) {
       if (trigger === "update") {
