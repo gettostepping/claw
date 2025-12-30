@@ -35,7 +35,7 @@ export default async function DashboardLayout({
               href="/dashboard" 
               className="text-3xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent hover:from-purple-300 hover:to-pink-300 transition-all"
             >
-              clawsome.world
+              clawsome.beauty
             </Link>
             <p className="text-xs text-neutral-400 mt-1 font-mono">underground control</p>
           </div>

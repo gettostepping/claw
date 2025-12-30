@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "clawsome.world",
+  title: "clawsome.beauty",
   description: "Your digital sanctuary",
 };
 

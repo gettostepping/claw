@@ -9,6 +9,7 @@ import { YouTubePlayer } from "./youtube-player"
 import { VideoPlayer } from "./video-player"
 import { Eye } from "lucide-react"
 import { PurpleParticlesEffect, GoldenGlowEffect, RainbowEffect, GlitchEffect } from "../effects/name-effects"
+import { getCardStyles } from "@/lib/styles"
 
 function TenorAvatar({ url, mp4Url, isGif, username }: { url: string; mp4Url: string; isGif: boolean; username: string }) {
   const [useGif, setUseGif] = useState(false)
@@ -107,52 +108,14 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
 
   const accentColor = profile.accentColor || "#a855f7"
 
-  const allStyles: Record<string, { card: string; avatar: string; font: string; text: string; glow: string }> = {
-    standard: {
-      card: "bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl",
-      avatar: "rounded-full border-2 border-white/20",
-      font: "",
-      text: "text-white",
-      glow: `shadow-[0_0_20px_rgba(${parseInt(accentColor.slice(1, 3), 16)},${parseInt(accentColor.slice(3, 5), 16)},${parseInt(accentColor.slice(5, 7), 16)},0.2)]`
-    },
-    brutal: {
-      card: "rounded-none bg-black border-4 border-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]",
-      avatar: "rounded-none border-4 border-white",
-      font: "font-mono tracking-widest uppercase",
-      text: "text-white",
-      glow: ""
-    },
-    minimal: {
-      card: "rounded-xl bg-transparent border-none shadow-none text-center",
-      avatar: "rounded-full border border-white/10",
-      font: "font-light tracking-wide",
-      text: "text-neutral-200",
-      glow: ""
-    },
-    neon: {
-      card: "rounded-xl bg-black/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]",
-      avatar: "rounded-full border-2 shadow-[0_0_15px_rgba(0,0,0,0.3)]",
-      font: "font-sans tracking-tight",
-      text: "text-white",
-      glow: "" // Will apply color inline
-    },
-    soft: {
-      card: "rounded-[3rem] bg-white/10 backdrop-blur-lg border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]",
-      avatar: "rounded-[2rem] border-4 border-white/50",
-      font: "font-serif italic",
-      text: "text-white",
-      glow: ""
-    }
-  }
-
-  const styles = allStyles[cardStyle] || allStyles.standard
+  const styles = getCardStyles(cardStyle, accentColor)
 
   const isNeon = cardStyle === "neon"
   const isBrutal = cardStyle === "brutal"
 
   return (
     <motion.div
-      className={`relative z-10 w-full max-w-lg p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow} rounded-2xl`}
+      className={`relative z-10 w-full max-w-lg p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`}
       style={{
         borderColor: isNeon ? accentColor : undefined,
         boxShadow: isNeon ? `0 0 20px ${accentColor}44, inset 0 0 10px ${accentColor}22` : undefined,
@@ -299,11 +262,21 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
 export function ProfileCardWithMusic({ username, profile, tracks, isOwner, accessToken }: ProfileCardProps) {
   const video = profile.videos[0] // Get the first video (or latest uploaded)
   const accentColor = profile.accentColor || "#a855f7"
+  const cardStyle = profile.cardStyle || "standard"
+  const styles = getCardStyles(cardStyle, accentColor)
+
+  const isNeon = cardStyle === "neon"
+  const isBrutal = cardStyle === "brutal"
+  const containerStyle = {
+    borderColor: isNeon ? accentColor : undefined,
+    boxShadow: isNeon ? `0 0 20px ${accentColor}44, inset 0 0 10px ${accentColor}22` : undefined,
+    borderWidth: isBrutal ? '4px' : isNeon ? '2px' : undefined
+  }
 
   return (
-    <div className="relative z-10 w-full max-w-[95vw] flex gap-6 items-center justify-center mx-auto">
+    <div className="relative z-10 w-full max-w-[95vw] flex flex-col md:flex-row gap-6 items-center justify-center mx-auto p-4">
       {/* Left: Music Section - Outside main box */}
-      <div className="w-96 flex-shrink-0">
+      <div className={`w-full md:w-96 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
         <MusicSection tracks={tracks} isOwner={isOwner} accentColor={accentColor} />
       </div>
 
@@ -312,14 +285,12 @@ export function ProfileCardWithMusic({ username, profile, tracks, isOwner, acces
 
       {/* Right: Video Player - Outside main box */}
       {profile.videos[0] ? (
-        <div className="w-160 flex-shrink-0">
-          <div className="rounded-xl bg-black/40 backdrop-blur-md border border-white/10 p-4">
-            <VideoPlayer video={profile.videos[0]} />
-          </div>
+        <div className={`w-full md:w-100 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
+          <VideoPlayer video={profile.videos[0]} />
         </div>
       ) : (
         /* Empty spacer to balance the left side music section (w-96) so the main card stays centered */
-        <div className="w-96 flex-shrink-0" aria-hidden="true" />
+        <div className="hidden md:block w-96 flex-shrink-0" aria-hidden="true" />
       )}
     </div>
   )

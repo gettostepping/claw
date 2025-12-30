@@ -27,11 +27,11 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   if (!user || !user.profile) return { title: "Not Found" }
 
   return {
-    title: `${user.profile.displayName} (@${user.username}) | clawsome.world`,
-    description: user.profile.bio || "Check out my profile on clawsome.world",
+    title: `${user.profile.displayName} (@${user.username}) | clawsome.beauty`,
+    description: user.profile.bio || "Check out my profile on clawsome.beauty",
     openGraph: {
       title: `${user.profile.displayName} (@${user.username})`,
-      description: user.profile.bio || "Check out my profile on clawsome.world",
+      description: user.profile.bio || "Check out my profile on clawsome.beauty",
       images: user.profile.avatarUrl ? [user.profile.avatarUrl] : [],
       type: 'profile',
       username: user.username || undefined,
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
     twitter: {
       card: 'summary_large_image',
       title: `${user.profile.displayName} (@${user.username})`,
-      description: user.profile.bio || "Check out my profile on clawsome.world",
+      description: user.profile.bio || "Check out my profile on clawsome.beauty",
       images: user.profile.avatarUrl ? [user.profile.avatarUrl] : [],
     }
   }

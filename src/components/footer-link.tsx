@@ -17,7 +17,7 @@ export function FooterLink({ accentColor }: { accentColor: string }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            clawsome.world
+            clawsome.beauty
         </Link>
     )
 }

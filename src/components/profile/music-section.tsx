@@ -433,7 +433,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
   }, [openMenuId])
 
   return (
-    <div className="h-full p-4 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {isOwner && (
         <>
           <form action={formAction} className="mb-6 flex-shrink-0">
