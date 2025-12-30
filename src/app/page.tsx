@@ -1,7 +1,7 @@
-import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { HeroContent } from "@/components/home/hero-content"
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
@@ -10,35 +10,35 @@ export default async function Home() {
   if (session?.user) {
     redirect("/dashboard")
   }
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-4">
-      <main className="flex flex-col items-center gap-8 text-center max-w-2xl">
-        <h1 className="text-6xl font-black tracking-tighter sm:text-8xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-          clawsome.world
-        </h1>
-        <p className="text-xl text-gray-400 sm:text-2xl font-light">
-          The underground identity layer. <br />
-          Highly customizable profiles for the new wave.
-        </p>
 
-        <div className="flex gap-4">
-          <Link
-            href="/dashboard"
-            className="px-8 py-3 rounded-full bg-white text-black font-bold hover:bg-gray-200 transition-colors"
-          >
-            Claim Your Profile
-          </Link>
-          <Link
-            href="/login"
-            className="px-8 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
-          >
-            Login
-          </Link>
-        </div>
+  return (
+    <div className="relative min-h-screen bg-black overflow-hidden flex flex-col">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(147,51,234,0.15),transparent_50%)]" />
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_100%,rgba(219,39,119,0.1),transparent_50%)]" />
+      </div>
+
+      <main className="flex-grow flex items-center justify-center">
+        <HeroContent />
       </main>
 
-      <footer className="absolute bottom-8 text-gray-600 text-sm">
-        inspired by gun.lol • built for the culture
+      <footer className="relative z-10 w-full py-12 px-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-black text-white tracking-tighter">CLAW<span className="text-purple-500">SOME</span>.WORLD</span>
+          </div>
+
+          <div className="text-neutral-500 text-sm font-light">
+            © {new Date().getFullYear()} • inspired by gun.lol • built for the culture
+          </div>
+
+          <div className="flex gap-8">
+            <a href="#" className="text-neutral-400 hover:text-white transition-colors text-sm">Terms</a>
+            <a href="#" className="text-neutral-400 hover:text-white transition-colors text-sm">Privacy</a>
+            <a href="#" className="text-neutral-400 hover:text-white transition-colors text-sm">Contact</a>
+          </div>
+        </div>
       </footer>
     </div>
   )
