@@ -31,7 +31,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           href={soundcloud}
           target="_blank"
           rel="noopener noreferrer"
-          className="opacity-50 hover:opacity-100 hover:text-[#ff5500] transition-all"
+          className="opacity-100 hover:opacity-100 hover:text-[#ff5500] transition-all"
           title="SoundCloud"
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
@@ -45,7 +45,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           href={youtube}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-400 hover:text-[#ff0000] transition-colors"
+          className="opacity-100 hover:opacity-100 hover:text-[#ff0000] transition-all"
           title="YouTube"
           whileHover={{ scale: 1.2, rotate: -5 }}
           whileTap={{ scale: 0.9 }}
@@ -59,7 +59,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           href={instagram}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-400 hover:text-[#e1306c] transition-colors"
+          className="opacity-100 hover:opacity-100 hover:text-[#e1306c] transition-all"
           title="Instagram"
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
@@ -71,7 +71,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
       {discord && (
         <motion.button
           onClick={handleCopyDiscord}
-          className="text-gray-400 hover:text-[#5865F2] transition-colors relative group"
+          className="opacity-100 hover:opacity-100 hover:text-[#5865F2] transition-all relative group"
           title="Copy Discord Username"
           whileHover={{ scale: 1.2, rotate: -5 }}
           whileTap={{ scale: 0.9 }}
