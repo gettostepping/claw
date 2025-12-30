@@ -73,13 +73,26 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      if (account?.provider === "google" && user.email) {
+        try {
+          const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
+          if (user.email === adminEmail) {
+            await prisma.user.update({
+              where: { email: user.email },
+              data: { role: "admin" }
+            });
+          }
+        } catch (error) {
+          console.error("Error in signIn callback:", error);
+        }
+      }
       return true;
     },
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
       // Allows callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url
+      if (url.startsWith(baseUrl)) return url
       return baseUrl
     },
     async jwt({ token, user, account, trigger, session }) {
@@ -106,25 +119,6 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
         token.expiresAt = account.expires_at
-
-        // If this is a Google OAuth sign-in for a new user, ensure proper role assignment
-        if (account.provider === 'google' && user.email) {
-          // Check if the user already has a role set
-          if (!token.role || token.role === 'member') {
-            const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
-            const isAdmin = user.email === adminEmail;
-
-            if (isAdmin && token.role !== 'admin') {
-              // Update the user in the database to set admin role
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { role: 'admin' }
-              });
-
-              token.role = 'admin';
-            }
-          }
-        }
       }
       return token
     },
@@ -133,7 +127,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.name = token.name || undefined
         session.user.email = token.email || undefined
-        session.user.image = token.picture || undefined
+        session.user.image = token.image as string || undefined
         session.user.username = token.username as string || undefined
         session.user.role = token.role as string || 'member'
         session.accessToken = token.accessToken as string || undefined
