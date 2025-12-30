@@ -97,20 +97,32 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
 
     if (avatarFile && avatarFile.size > 0) {
       const url = await handleFileUpload(avatarFile, 'images');
-      if (url) formData.append("avatarUrlDirect", url);
+      if (url) {
+        formData.append("avatarUrlDirect", url);
+        formData.delete("avatarFile");
+      }
     }
 
     if (bannerFile && bannerFile.size > 0) {
       const url = await handleFileUpload(bannerFile, 'images');
-      if (url) formData.append("bannerUrlDirect", url);
+      if (url) {
+        formData.append("bannerUrlDirect", url);
+        formData.delete("bannerFile");
+      }
     }
 
     if (bgType === 'image' && bgImageFile && bgImageFile.size > 0) {
       const url = await handleFileUpload(bgImageFile, 'images');
-      if (url) formData.append("backgroundUrlDirect", url);
+      if (url) {
+        formData.append("backgroundUrlDirect", url);
+        formData.delete("backgroundFileImage");
+      }
     } else if (bgType === 'video' && bgVideoFile && bgVideoFile.size > 0) {
       const url = await handleFileUpload(bgVideoFile, 'videos');
-      if (url) formData.append("backgroundUrlDirect", url);
+      if (url) {
+        formData.append("backgroundUrlDirect", url);
+        formData.delete("backgroundFileVideo");
+      }
     }
 
     setIsUploading(false);

@@ -81,7 +81,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     notFound()
   }
 
-  const { profile } = user
+  const profile = user.profile as any
 
   // Extract accent color for use in footer
   const accentColor = profile.accentColor || '#a855f7'

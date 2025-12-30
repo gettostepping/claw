@@ -11,21 +11,24 @@ export async function addVideo(prevState: unknown, formData: FormData) {
   if (!session?.user?.email) return { error: "Not authenticated" };
 
   const file = formData.get("video") as File | null;
+  const videoUrlDirect = formData.get("videoUrlDirect") as string | null;
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
 
-  if (!file) return { error: "Video file is required" };
+  if (!file && !videoUrlDirect) return { error: "Video file is required" };
   if (!title) return { error: "Title is required" };
-  
-  // Validate file size (max 100MB)
-  const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-  if (file.size > maxSize) {
-    return { error: `File size too large. Maximum size is 100MB, got ${(file.size / (1024 * 1024)).toFixed(2)}MB` };
-  }
-  
-  // Validate file type
-  if (!file.type.startsWith('video/')) {
-    return { error: "File must be a video" };
+
+  if (file && !videoUrlDirect) {
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+    if (file.size > maxSize) {
+      return { error: `File size too large. Maximum size is 100MB, got ${(file.size / (1024 * 1024)).toFixed(2)}MB` };
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      return { error: "File must be a video" };
+    }
   }
 
   try {
@@ -37,11 +40,19 @@ export async function addVideo(prevState: unknown, formData: FormData) {
       return { error: "Profile not found" };
     }
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
+    let videoUrl = videoUrlDirect;
+    let fileName = videoUrlDirect ? "uploaded-video" : (file?.name || "uploaded-video");
+    let mimeType = videoUrlDirect ? "video/mp4" : (file?.type || "video/mp4");
+    let fileSize = file?.size || 0;
 
-    // Upload to Cloudflare R2
-    const videoUrl = await uploadVideoToR2(buffer, file.name, file.type);
+    if (!videoUrl && file) {
+      // Convert file to buffer
+      const buffer = Buffer.from(await file.arrayBuffer());
+      // Upload to Cloudflare R2
+      videoUrl = await uploadVideoToR2(buffer, file.name, file.type);
+    }
+
+    if (!videoUrl) return { error: "Failed to upload video" };
 
     // Create video record in database
     await prisma.video.create({
@@ -49,9 +60,9 @@ export async function addVideo(prevState: unknown, formData: FormData) {
         profileId: profile.id,
         title,
         description: description || null,
-        fileName: file.name,
-        mimeType: file.type,
-        fileSize: file.size,
+        fileName,
+        mimeType,
+        fileSize,
         url: videoUrl,
       },
     });

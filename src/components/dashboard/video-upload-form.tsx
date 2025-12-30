@@ -2,21 +2,21 @@
 
 import { addVideo, deleteVideo } from "@/actions/video";
 import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 
-function SubmitButton() {
+function SubmitButton({ isUploading }: { isUploading: boolean }) {
   const { pending } = useFormStatus();
   return (
     <motion.button
       type="submit"
-      disabled={pending}
+      disabled={pending || isUploading}
       className="px-4 py-2 rounded-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20 text-sm"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      {pending ? "Uploading..." : "Upload Video"}
+      {isUploading ? "Uploading Video..." : pending ? "Saving..." : "Upload Video"}
     </motion.button>
   );
 }
@@ -32,6 +32,51 @@ type Video = {
 export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?: Video }) {
   const [state, formAction] = useActionState(addVideo, null);
   const [deleteState, deleteAction] = useActionState(deleteVideo, null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function handleFileUpload(file: File): Promise<string | null> {
+    try {
+      const res = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          folder: 'videos'
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to get presigned URL');
+      const { uploadUrl, publicUrl } = await res.json();
+
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload to R2');
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+  }
+
+  const enhancedAction = async (formData: FormData) => {
+    const file = formData.get("video") as File | null;
+    if (file && file.size > 4 * 1024 * 1024) { // Only direct upload if > 4MB (Vercel limit)
+      setIsUploading(true);
+      const url = await handleFileUpload(file);
+      if (url) {
+        formData.append("videoUrlDirect", url);
+        formData.delete("video"); // CRITICAL: remove blob from payload
+      }
+      setIsUploading(false);
+    }
+    formAction(formData);
+  };
 
   return (
     <div className="space-y-4">
@@ -46,7 +91,7 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
         </div>
       )}
 
-      <form action={formAction} className="space-y-4">
+      <form action={enhancedAction} className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">
             Video Title
@@ -68,7 +113,7 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
             name="description"
             placeholder="Describe your video..."
             rows={3}
-            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
           />
         </div>
 
@@ -88,7 +133,7 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
           </p>
         </div>
 
-        <SubmitButton />
+        <SubmitButton isUploading={isUploading} />
       </form>
 
       {hasVideo && video && (

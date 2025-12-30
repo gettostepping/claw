@@ -47,7 +47,7 @@ export default async function EditProfilePage() {
           <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
           <h2 className="text-2xl font-bold">Profile Settings</h2>
         </div>
-        <ProfileForm profile={user.profile} key={JSON.stringify(user.profile)} />
+        <ProfileForm profile={user.profile as any} key={JSON.stringify(user.profile)} />
       </div>
 
       {/* Links Section */}
