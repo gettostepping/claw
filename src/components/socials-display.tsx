@@ -27,11 +27,11 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
   return (
     <div className="flex items-center justify-center gap-4 py-2">
       {soundcloud && (
-        <motion.a 
-          href={soundcloud} 
-          target="_blank" 
+        <motion.a
+          href={soundcloud}
+          target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-400 hover:text-[#ff5500] transition-colors"
+          className="opacity-50 hover:opacity-100 hover:text-[#ff5500] transition-all"
           title="SoundCloud"
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
@@ -39,11 +39,11 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           <CloudLightning size={20} />
         </motion.a>
       )}
-      
+
       {youtube && (
-        <motion.a 
-          href={youtube} 
-          target="_blank" 
+        <motion.a
+          href={youtube}
+          target="_blank"
           rel="noopener noreferrer"
           className="text-gray-400 hover:text-[#ff0000] transition-colors"
           title="YouTube"
@@ -53,11 +53,11 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           <Youtube size={20} />
         </motion.a>
       )}
-      
+
       {instagram && (
-        <motion.a 
-          href={instagram} 
-          target="_blank" 
+        <motion.a
+          href={instagram}
+          target="_blank"
           rel="noopener noreferrer"
           className="text-gray-400 hover:text-[#e1306c] transition-colors"
           title="Instagram"
@@ -67,9 +67,9 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           <Instagram size={20} />
         </motion.a>
       )}
-      
+
       {discord && (
-        <motion.button 
+        <motion.button
           onClick={handleCopyDiscord}
           className="text-gray-400 hover:text-[#5865F2] transition-colors relative group"
           title="Copy Discord Username"

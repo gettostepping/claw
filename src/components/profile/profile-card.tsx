@@ -117,7 +117,7 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
 
   const accentColor = profile.accentColor || "#a855f7"
 
-  const styles = getCardStyles(cardStyle, accentColor)
+  const styles = getCardStyles(cardStyle, accentColor, (profile as any).textTheme || "white")
 
   const isNeon = cardStyle === "neon"
   const isBrutal = cardStyle === "brutal"

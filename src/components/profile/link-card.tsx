@@ -13,11 +13,11 @@ export function LinkCard({ title, url }: LinkCardProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block w-full py-3 px-4 rounded-xl bg-white/5 border border-white/5 transition-all text-center font-medium relative overflow-hidden group"
-      whileHover={{ 
-        scale: 1.02, 
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-        borderColor: "rgba(255, 255, 255, 0.2)",
+      className="block w-full py-3 px-4 rounded-xl bg-current/5 border border-current/5 transition-all text-center font-medium relative overflow-hidden group"
+      whileHover={{
+        scale: 1.02,
+        backgroundColor: "rgba(128, 128, 128, 0.1)",
+        borderColor: "rgba(128, 128, 128, 0.2)",
       }}
       whileTap={{ scale: 0.98 }}
       initial={{ opacity: 0, y: 20 }}

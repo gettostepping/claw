@@ -29,9 +29,9 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
         Your browser does not support the video tag.
       </video>
       <div className="mt-2">
-        <h3 className="text-white font-medium truncate">{video.title}</h3>
+        <h3 className="font-medium truncate opacity-100">{video.title}</h3>
         {video.description && (
-          <p className="text-gray-400 text-sm mt-1 line-clamp-2">{video.description}</p>
+          <p className="opacity-50 text-sm mt-1 line-clamp-2">{video.description}</p>
         )}
       </div>
     </div>

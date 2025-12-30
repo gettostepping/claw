@@ -45,6 +45,7 @@ model Profile {
   accentColor     String  @default("#a855f7")
   cardStyle       String  @default("standard")
   featuredContent String  @default("video") // video | beats
+  textTheme       String  @default("white") // white | black
   blurBackground  Boolean @default(false)
   showViews       Boolean @default(true)
   views           Int     @default(0)

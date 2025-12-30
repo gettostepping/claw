@@ -243,7 +243,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                     return (
                         <div
                             key={beat.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-current/10' : 'hover:bg-current/5'}`}
                         >
                             <div className="relative w-12 h-12 rounded overflow-hidden bg-neutral-800 flex-shrink-0 group">
                                 {beat.coverUrl ? (
@@ -262,13 +262,18 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                                 </button>
                             </div>
 
-                            <div className="flex-1 min-w-0">
-                                <h4 className={`font-medium text-sm truncate ${isActive ? 'text-white' : 'text-gray-300'}`}>
+                            <div className="flex-1 min-w-0 text-left">
+                                <h4 className={`font-medium text-sm truncate ${isActive ? 'opacity-100' : 'opacity-70'}`}>
                                     {beat.title}
                                 </h4>
+                                {beat.artist && (
+                                    <p className="text-[10px] text-neutral-500 font-mono uppercase tracking-tighter truncate">
+                                        {beat.artist}
+                                    </p>
+                                )}
                                 <div className="mt-1 flex items-center gap-3">
                                     <div
-                                        className="flex-1 h-1.5 rounded bg-white/10 overflow-hidden cursor-pointer relative"
+                                        className="flex-1 h-1.5 rounded bg-current/10 overflow-hidden cursor-pointer relative"
                                         onClick={(e) => {
                                             const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                                             const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
@@ -276,18 +281,18 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                                         }}
                                     >
                                         <div
-                                            className="h-full bg-white/60 transition-all"
+                                            className="h-full bg-current/60 transition-all"
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>
-                                    <div className="flex items-center gap-1 text-[10px] text-gray-400 whitespace-nowrap">
+                                    <div className="flex items-center gap-1 text-[10px] opacity-50 whitespace-nowrap">
                                         <span>{formatTime(trackCurrentTime)}</span>
                                         <span>/</span>
                                         <span>{formatTime(trackDuration)}</span>
                                     </div>
 
                                     <div className="flex items-center gap-1">
-                                        <Volume2 size={14} className="text-gray-400" />
+                                        <Volume2 size={14} className="opacity-50" />
                                         <input
                                             type="range"
                                             min={0}
@@ -309,7 +314,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                                                     e.stopPropagation()
                                                     setOpenMenuId(showMenu ? null : beat.id)
                                                 }}
-                                                className="p-1 text-gray-400 hover:text-white"
+                                                className="p-1 opacity-50 hover:opacity-100 transition-opacity"
                                             >
                                                 <MoreVertical size={16} />
                                             </button>

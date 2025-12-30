@@ -170,12 +170,13 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         backgroundEffect,
         nameEffect,
         featuredContent: formData.get("featuredContent") as string || "video",
+        textTheme: formData.get("textTheme") as string || "white",
       },
     })
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/edit")
-    if (session.user.name) {
-      revalidatePath(`/@${session.user.name}`)
+    if (session.user.username) {
+      revalidatePath(`/@${session.user.username}`)
     }
     return { success: true }
   } catch (error) {

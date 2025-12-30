@@ -2,7 +2,7 @@
 
 import { addBeat } from "@/actions/beats";
 import { useFormStatus } from "react-dom";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState, useTransition, useRef } from "react";
 import { motion } from "framer-motion";
 import { Music, Upload } from "lucide-react";
 
@@ -25,8 +25,10 @@ export function BeatUploadForm() {
     const [isUploading, setIsUploading] = useState(false);
     const [isActionPending, startTransition] = useTransition();
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const isProcessing = useRef(false);
 
     async function handleFileUpload(file: File): Promise<string | null> {
+        // ... same handleFileUpload ...
         try {
             const res = await fetch('/api/upload/presigned', {
                 method: 'POST',
@@ -57,11 +59,19 @@ export function BeatUploadForm() {
     }
 
     const enhancedAction = async (formData: FormData) => {
+        if (isProcessing.current) return;
+        isProcessing.current = true;
         setUploadError(null);
-        const file = formData.get("beat") as File | null;
 
-        if (file && file.size > 0) {
-            setIsUploading(true);
+        const file = formData.get("beat") as File | null;
+        if (!file || file.size === 0) {
+            setUploadError("Audio file is required.");
+            isProcessing.current = false;
+            return;
+        }
+
+        setIsUploading(true);
+        try {
             const url = await handleFileUpload(file);
             if (url) {
                 formData.append("url", url);
@@ -71,16 +81,21 @@ export function BeatUploadForm() {
             } else {
                 setUploadError("Failed to upload audio to R2.");
                 setIsUploading(false);
+                isProcessing.current = false;
                 return;
             }
+        } catch (err) {
+            setUploadError("An unexpected error occurred.");
             setIsUploading(false);
-        } else {
-            setUploadError("Audio file is required.");
+            isProcessing.current = false;
             return;
         }
 
+        setIsUploading(false);
         startTransition(() => {
             formAction(formData);
+            // reset processing after the action is at least started
+            isProcessing.current = false;
         });
     };
 

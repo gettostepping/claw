@@ -323,6 +323,21 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
           </p>
         </div>
 
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Text Theme</label>
+          <select
+            name="textTheme"
+            defaultValue={(profile as any).textTheme || "white"}
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
+          >
+            <option value="white">White (Light Text)</option>
+            <option value="black">Black (Dark Text)</option>
+          </select>
+          <p className="text-[10px] text-neutral-500 font-mono">
+            Choose either white or black text for better contrast on your background.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Background Effect</label>
