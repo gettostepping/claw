@@ -28,7 +28,7 @@ export function HeroContent() {
                     className="text-7xl md:text-9xl font-black text-white tracking-tighter leading-none"
                 >
                     CLAW<br className="sm:hidden" />SOME
-                    <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-500 to-purple-800">.WORLD</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-500 to-purple-800">.BEAUTY</span>
                 </motion.h1>
 
                 <motion.p

@@ -26,7 +26,7 @@ export default async function Home() {
       <footer className="relative z-10 w-full py-12 px-4 border-t border-white/5 bg-black/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-black text-white tracking-tighter">CLAW<span className="text-purple-500">SOME</span>.WORLD</span>
+            <span className="text-xl font-black text-white tracking-tighter">CLAW<span className="text-purple-500">SOME</span>.BEAUTY</span>
           </div>
 
           <div className="text-neutral-500 text-sm font-light">
