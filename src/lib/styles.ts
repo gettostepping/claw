@@ -10,9 +10,10 @@ interface StyleConfig {
     borderRadius?: string;
 }
 
-export function getCardStyles(style: string, accentColor: string, textTheme: string = 'white'): StyleConfig {
+export function getCardStyles(style: string, accentColor: string, textTheme: string = 'white', cardColorMode: string = 'dark'): StyleConfig {
     const cardStyle = (style || 'standard') as CardStyle;
-    const isBlackText = textTheme === 'black';
+    const isBlackText = textTheme === 'black'; // Only controls text color now
+    const isLightCard = cardColorMode === 'light'; // Controls background color
 
     const r = parseInt(accentColor.slice(1, 3), 16);
     const g = parseInt(accentColor.slice(3, 5), 16);
@@ -20,19 +21,20 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
 
     const styles: Record<CardStyle, StyleConfig> = {
         standard: {
-            card: isBlackText
+            card: isLightCard
                 ? "bg-white/40 backdrop-blur-md border border-neutral-950/10 shadow-2xl rounded-2xl"
                 : "bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl",
-            avatar: isBlackText ? "rounded-full border-2 border-neutral-950/20" : "rounded-full border-2 border-white/20",
+            avatar: isLightCard ? "rounded-full border-2 border-neutral-950/20" : "rounded-full border-2 border-white/20",
             font: "",
             text: isBlackText ? "text-neutral-950" : "text-white",
             glow: `shadow-[0_0_20px_rgba(${r},${g},${b},0.2)]`
         },
         brutal: {
-            card: isBlackText
+            // Brutal usually ignores transparency, but let's map Light->White, Dark->Black
+            card: isLightCard
                 ? "rounded-none bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                 : "rounded-none bg-black border-4 border-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]",
-            avatar: isBlackText ? "rounded-none border-4 border-black" : "rounded-none border-4 border-white",
+            avatar: isLightCard ? "rounded-none border-4 border-black" : "rounded-none border-4 border-white",
             font: "font-mono tracking-widest uppercase",
             text: isBlackText ? "text-neutral-950" : "text-white",
             glow: "",
@@ -40,13 +42,13 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
         },
         minimal: {
             card: "rounded-xl bg-transparent border-none shadow-none text-center",
-            avatar: isBlackText ? "rounded-full border border-neutral-950/20" : "rounded-full border border-white/10",
+            avatar: isLightCard ? "rounded-full border border-neutral-950/20" : "rounded-full border border-white/10",
             font: "font-light tracking-wide",
             text: isBlackText ? "text-neutral-950" : "text-neutral-200",
             glow: ""
         },
         neon: {
-            card: isBlackText
+            card: isLightCard
                 ? "rounded-xl bg-white/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(255,255,255,0.5)]"
                 : "rounded-xl bg-black/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]",
             avatar: "rounded-full border-2 shadow-[0_0_15px_rgba(0,0,0,0.3)]",
@@ -56,10 +58,10 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
             borderWidth: '2px'
         },
         soft: {
-            card: isBlackText
-                ? "rounded-[3rem] bg-black/10 backdrop-blur-lg border border-black/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]"
-                : "rounded-[3rem] bg-white/10 backdrop-blur-lg border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]",
-            avatar: isBlackText ? "rounded-[2rem] border-4 border-black/50" : "rounded-[2rem] border-4 border-white/50",
+            card: isLightCard
+                ? "rounded-[3rem] bg-white/10 backdrop-blur-lg border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]"
+                : "rounded-[3rem] bg-black/10 backdrop-blur-lg border border-black/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]",
+            avatar: isLightCard ? "rounded-[2rem] border-4 border-white/50" : "rounded-[2rem] border-4 border-black/50",
             font: "font-serif italic",
             text: isBlackText ? "text-neutral-950" : "text-white",
             glow: ""

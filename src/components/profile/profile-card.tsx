@@ -274,7 +274,7 @@ export function ProfileCardWithMusic({ username, profile, tracks, beats, isOwner
   const video = profile.videos[0] // Get the first video (or latest uploaded)
   const accentColor = profile.accentColor || "#a855f7"
   const cardStyle = profile.cardStyle || "standard"
-  const styles = getCardStyles(cardStyle, accentColor, (profile as any).textTheme || "white")
+  const styles = getCardStyles(cardStyle, accentColor, (profile as any).textTheme || "white", (profile as any).cardColorMode || "dark")
 
   const isNeon = cardStyle === "neon"
   const isBrutal = cardStyle === "brutal"

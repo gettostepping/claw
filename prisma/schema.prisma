@@ -46,6 +46,7 @@ model Profile {
   cardStyle       String  @default("standard")
   featuredContent String  @default("video") // video | beats
   textTheme       String  @default("white") // white | black
+  cardColorMode   String  @default("dark") // dark | light
   blurBackground  Boolean @default(false)
   showViews       Boolean @default(true)
   views           Int     @default(0)

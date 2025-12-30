@@ -17,7 +17,15 @@ async function getUniqueKey(prefix: string, fileName: string): Promise<string> {
   const name = dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName;
   const ext = dotIndex !== -1 ? fileName.substring(dotIndex) : '';
 
-  let key = `${prefix}/${fileName}`;
+  // Sanitize: lowercase, spaces -> hyphens, alphanumeric only
+  const sanitized = name.toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-_]/g, '');
+
+  // Ensure we don't end up with an empty name
+  const finalName = sanitized || 'unnamed-file';
+
+  let key = `${prefix}/${finalName}${ext}`;
   let count = 0;
 
   while (true) {
