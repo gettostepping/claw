@@ -91,7 +91,7 @@ export async function generatePresignedUrl(
   return { uploadUrl, publicUrl, key };
 }
 
-export async function deleteVideoFromR2(fileKey: string): Promise<void> {
+export async function deleteFileFromR2(fileKey: string): Promise<void> {
   const command = new DeleteObjectCommand({
     Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
     Key: fileKey,

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MouseFollower } from "@/components/effects/mouse-follower";
 import { ClickEffect } from "@/components/effects/click-effect";
+import { CustomCursor } from "@/components/ui/custom-cursor";
 import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
@@ -31,7 +32,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <MouseFollower />
+          <CustomCursor />
+          {/* <MouseFollower /> */}
           <ClickEffect />
           {children}
         </Providers>

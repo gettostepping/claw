@@ -1,5 +1,7 @@
 "use server"
 
+import { deleteFileFromR2 } from "@/lib/cloudflare-r2"
+
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
@@ -60,6 +62,23 @@ export async function deleteBeat(beatId: string) {
 
         if (!beat || beat.profile.userId !== session.user.id) {
             return { error: "Unauthorized" }
+        }
+
+        // Delete from R2
+        try {
+            const publicUrlPrefix = process.env.CLOUDFLARE_R2_PUBLIC_URL
+            if (publicUrlPrefix && beat.url.startsWith(publicUrlPrefix)) {
+                // Extract key from URL
+                // URL: https://pub-xxx.r2.dev/audio/filename.mp3
+                // Key: audio/filename.mp3
+                const relativePath = beat.url.replace(`${publicUrlPrefix}/`, '')
+                const key = decodeURI(relativePath)
+
+                await deleteFileFromR2(key)
+            }
+        } catch (err) {
+            console.error("Failed to delete file from R2:", err)
+            // Continue with DB deletion even if R2 fails
         }
 
         await prisma.beat.delete({
