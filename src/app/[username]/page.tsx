@@ -72,16 +72,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           musicEmbeds: true,
           tracks: { orderBy: { createdAt: "desc" } },
           videos: true,
+          beats: { orderBy: { createdAt: "desc" } },
         }
       }
     },
   })
 
-  if (!user || !user.profile) {
+  if (!user || !(user as any).profile) {
     notFound()
   }
 
-  const profile = user.profile as any
+  const profile = (user as any).profile
 
   // Extract accent color for use in footer
   const accentColor = profile.accentColor || '#a855f7'
@@ -98,6 +99,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     accentColor: profile.accentColor ?? "#a855f7",
     backgroundEffect: profile.backgroundEffect ?? "none",
     nameEffect: profile.nameEffect ?? "none",
+    featuredContent: profile.featuredContent ?? "video",
   }
 
   const tracks = profile.tracks.map((t: { id: string; title: string; artist?: string | null; coverUrl?: string | null; streamUrl: string; duration?: number | null }) => ({
@@ -107,6 +109,15 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     coverUrl: t.coverUrl ?? null,
     streamUrl: t.streamUrl,
     duration: t.duration ?? null,
+  }))
+
+  const beats = profile.beats.map((b: { id: string; title: string; artist?: string | null; coverUrl?: string | null; url: string; duration?: number | null }) => ({
+    id: b.id,
+    title: b.title,
+    artist: b.artist ?? null,
+    coverUrl: b.coverUrl ?? null,
+    url: b.url,
+    duration: b.duration ?? null,
   }))
 
   const session = await getServerSession(authOptions)
@@ -161,7 +172,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
       <ViewTracker profileId={profile.id} shouldTrack={shouldTrack} />
 
-      <ProfileCardWithMusic username={username} profile={sanitizedProfile} tracks={tracks} isOwner={isOwner} accessToken={session?.accessToken} />
+      <ProfileCardWithMusic
+        username={username}
+        profile={sanitizedProfile}
+        tracks={tracks}
+        beats={beats}
+        isOwner={isOwner}
+        accessToken={session?.accessToken}
+      />
 
       <footer className="absolute bottom-4 text-xs opacity-40">
         <FooterLink accentColor={accentColor} />

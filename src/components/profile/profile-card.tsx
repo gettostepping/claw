@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { SocialsDisplay } from "@/components/socials-display"
 import { LinkCard } from "@/components/profile/link-card"
 import { MusicSection } from "./music-section"
+import { BeatSection } from "./beat-section"
 import { YouTubePlayer } from "./youtube-player"
 import { VideoPlayer } from "./video-player"
 import { Eye } from "lucide-react"
@@ -91,6 +92,7 @@ interface ProfileCardProps {
     }[]
     backgroundEffect?: string
     nameEffect?: string
+    featuredContent?: string
   }
   tracks: {
     id: string
@@ -98,6 +100,13 @@ interface ProfileCardProps {
     artist: string | null
     coverUrl: string | null
     streamUrl: string
+  }[]
+  beats: {
+    id: string
+    title: string
+    artist: string | null
+    coverUrl: string | null
+    url: string
   }[]
   isOwner: boolean
   accessToken?: string
@@ -259,7 +268,7 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
   )
 }
 
-export function ProfileCardWithMusic({ username, profile, tracks, isOwner, accessToken }: ProfileCardProps) {
+export function ProfileCardWithMusic({ username, profile, tracks, beats, isOwner, accessToken }: ProfileCardProps) {
   const video = profile.videos[0] // Get the first video (or latest uploaded)
   const accentColor = profile.accentColor || "#a855f7"
   const cardStyle = profile.cardStyle || "standard"
@@ -273,6 +282,10 @@ export function ProfileCardWithMusic({ username, profile, tracks, isOwner, acces
     borderWidth: isBrutal ? '4px' : isNeon ? '2px' : undefined
   }
 
+  // Show beats if chosen, or if video is chosen but none exists and beats DO exist
+  const showBeats = profile.featuredContent === "beats" ||
+    (profile.featuredContent === "video" && profile.videos.length === 0 && beats.length > 0)
+
   return (
     <div className="relative z-10 w-full max-w-[95vw] flex flex-col md:flex-row gap-6 items-center justify-center mx-auto p-4">
       {/* Left: Music Section - Outside main box */}
@@ -281,10 +294,14 @@ export function ProfileCardWithMusic({ username, profile, tracks, isOwner, acces
       </div>
 
       {/* Main Profile Card Box */}
-      <ProfileCard username={username} profile={profile} tracks={tracks} isOwner={isOwner} />
+      <ProfileCard username={username} profile={profile} tracks={tracks} isOwner={isOwner} beats={beats} />
 
-      {/* Right: Video Player - Outside main box */}
-      {profile.videos[0] ? (
+      {/* Right: Video Player or Beat Section - Outside main box */}
+      {showBeats ? (
+        <div className={`w-full md:w-96 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
+          <BeatSection beats={beats} isOwner={isOwner} accentColor={accentColor} />
+        </div>
+      ) : profile.videos[0] ? (
         <div className={`w-full md:w-100 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
           <VideoPlayer video={profile.videos[0]} />
         </div>

@@ -72,10 +72,17 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
+        // Fetch fresh user data from DB to ensure roles/usernames are live
+        // This solves the issue where role changes in the DB don't reflect until logout
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, username: true, email: true }
+        })
+
         session.user.id = token.id as string
-        session.user.email = token.email || undefined
-        session.user.username = token.username as string || undefined
-        session.user.role = token.role as string || 'member'
+        session.user.email = dbUser?.email || (token.email as string) || undefined
+        session.user.username = dbUser?.username || (token.username as string) || undefined
+        session.user.role = dbUser?.role || (token.role as string) || 'member'
       }
       return session
     },

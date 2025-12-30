@@ -44,6 +44,7 @@ model Profile {
   nameEffect       String  @default("none")
   accentColor     String  @default("#a855f7")
   cardStyle       String  @default("standard")
+  featuredContent String  @default("video") // video | beats
   blurBackground  Boolean @default(false)
   showViews       Boolean @default(true)
   views           Int     @default(0)
@@ -61,6 +62,7 @@ model Profile {
   musicEmbeds MusicEmbed[]
   tracks      Track[]
   videos      Video[]
+  beats       Beat[]
 }
 
 // Track (Uploaded via Cobalt)
@@ -73,6 +75,22 @@ model Track {
   streamUrl String // Direct URL from Cobalt or processed
   sourceUrl String? // Original SoundCloud URL
   duration  Int?    // Duration in seconds
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+// Beat (Uploaded to R2)
+model Beat {
+  id        String   @id @default(cuid())
+  profileId String
+  title     String
+  artist    String?
+  coverUrl  String?
+  url       String // Cloudflare R2 URL
+  duration  Int?   // Duration in seconds
+  fileSize  Int?   // Size in bytes
+  mimeType  String? // e.g. audio/mpeg
   createdAt DateTime @default(now())
 
   profile Profile @relation(fields: [profileId], references: [id])

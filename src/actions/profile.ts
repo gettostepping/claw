@@ -169,6 +169,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         socialDiscord,
         backgroundEffect,
         nameEffect,
+        featuredContent: formData.get("featuredContent") as string || "video",
       },
     })
     revalidatePath("/dashboard")

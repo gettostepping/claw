@@ -2,7 +2,7 @@
 
 import { updateProfile } from "@/actions/profile"
 import { useFormStatus } from "react-dom"
-import { useActionState, useState, useRef, useCallback } from "react"
+import { useActionState, useState, useRef, useCallback, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AvatarCropper } from "./avatar-cropper"
 
@@ -42,12 +42,14 @@ type ProfileType = {
   cardStyle?: string;
   backgroundEffect?: string;
   nameEffect?: string;
+  featuredContent?: string;
 };
 
 export function ProfileForm({ profile }: { profile: ProfileType }) {
-  const [state, formAction] = useActionState(updateProfile, null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [state, formAction] = useActionState(updateProfile, null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isActionPending, startTransition] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null)
 
   // Previews & State
@@ -183,7 +185,9 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
     }
 
     setIsUploading(false);
-    formAction(formData);
+    startTransition(() => {
+      formAction(formData);
+    });
   };
 
   return (
@@ -302,6 +306,21 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
             <option value="neon">Neon (Glowing)</option>
             <option value="soft">Soft (Rounded)</option>
           </select>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Featured Content (Right Side)</label>
+          <select
+            name="featuredContent"
+            defaultValue={profile.featuredContent || "video"}
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
+          >
+            <option value="video">Featured Video</option>
+            <option value="beats">Beat Posts (R2 Tracks)</option>
+          </select>
+          <p className="text-[10px] text-neutral-500 font-mono">
+            Choose what to display on the right side of your profile card.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
