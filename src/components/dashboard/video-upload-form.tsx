@@ -33,6 +33,7 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
   const [state, formAction] = useActionState(addVideo, null);
   const [deleteState, deleteAction] = useActionState(deleteVideo, null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   async function handleFileUpload(file: File): Promise<string | null> {
     try {
@@ -65,16 +66,26 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
   }
 
   const enhancedAction = async (formData: FormData) => {
+    setUploadError(null);
     const file = formData.get("video") as File | null;
-    if (file && file.size > 4 * 1024 * 1024) { // Only direct upload if > 4MB (Vercel limit)
+
+    // Only direct upload if file exists
+    if (file && file.size > 0) {
+      // If > 4.5MB, direct upload is REQUIRED
+      // Otherwise it's optional but recommended for consistency
       setIsUploading(true);
       const url = await handleFileUpload(file);
       if (url) {
         formData.append("videoUrlDirect", url);
-        formData.delete("video"); // CRITICAL: remove blob from payload
+        formData.delete("video"); // CRITICAL: remove binary from payload
+      } else {
+        setUploadError("Failed to upload video to R2. Please check your CORS settings.");
+        setIsUploading(false);
+        return;
       }
       setIsUploading(false);
     }
+
     formAction(formData);
   };
 
@@ -83,6 +94,11 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
       {state?.error && (
         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-mono">
           {state.error}
+        </div>
+      )}
+      {uploadError && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-mono">
+          {uploadError}
         </div>
       )}
       {(state?.success || deleteState?.success) && (
@@ -101,7 +117,7 @@ export function VideoUploadForm({ hasVideo, video }: { hasVideo: boolean; video?
             type="text"
             required
             placeholder="My Awesome Video"
-            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
           />
         </div>
 

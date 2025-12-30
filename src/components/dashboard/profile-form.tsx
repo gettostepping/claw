@@ -46,6 +46,7 @@ type ProfileType = {
 export function ProfileForm({ profile }: { profile: ProfileType }) {
   const [state, formAction] = useActionState(updateProfile, null)
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   // Direct URLs state
@@ -87,6 +88,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
 
   const enhancedAction = async (formData: FormData) => {
     setIsUploading(true);
+    setUploadError(null);
 
     // Check for large files and upload them directly
     const avatarFile = formData.get("avatarFile") as File | null;
@@ -100,6 +102,10 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       if (url) {
         formData.append("avatarUrlDirect", url);
         formData.delete("avatarFile");
+      } else {
+        setUploadError("Failed to upload avatar. Please check your connection or CORS settings.");
+        setIsUploading(false);
+        return;
       }
     }
 
@@ -108,6 +114,10 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       if (url) {
         formData.append("bannerUrlDirect", url);
         formData.delete("bannerFile");
+      } else {
+        setUploadError("Failed to upload banner. Please check your connection or CORS settings.");
+        setIsUploading(false);
+        return;
       }
     }
 
@@ -116,12 +126,20 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       if (url) {
         formData.append("backgroundUrlDirect", url);
         formData.delete("backgroundFileImage");
+      } else {
+        setUploadError("Failed to upload background image.");
+        setIsUploading(false);
+        return;
       }
     } else if (bgType === 'video' && bgVideoFile && bgVideoFile.size > 0) {
       const url = await handleFileUpload(bgVideoFile, 'videos');
       if (url) {
         formData.append("backgroundUrlDirect", url);
         formData.delete("backgroundFileVideo");
+      } else {
+        setUploadError("Failed to upload background video.");
+        setIsUploading(false);
+        return;
       }
     }
 
@@ -156,6 +174,11 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       {state?.error && (
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-mono">
           {state.error}
+        </div>
+      )}
+      {uploadError && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-mono">
+          {uploadError}
         </div>
       )}
       {state?.success && (
