@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Create S3 client configured for Cloudflare R2
 const r2Client = new S3Client({
@@ -60,6 +61,26 @@ export async function uploadVideoToR2(
   // Return the public URL
   const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
   return publicUrl;
+}
+
+export async function generatePresignedUrl(
+  fileName: string,
+  mimeType: string,
+  folder: 'images' | 'videos' = 'images'
+): Promise<{ uploadUrl: string; publicUrl: string; key: string }> {
+  const key = await getUniqueKey(folder, fileName);
+
+  const command = new PutObjectCommand({
+    Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    Key: key,
+    ContentType: mimeType,
+  });
+
+  // URL expires in 3600 seconds (1 hour)
+  const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+
+  return { uploadUrl, publicUrl, key };
 }
 
 export async function deleteVideoFromR2(fileKey: string): Promise<void> {

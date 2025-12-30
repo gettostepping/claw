@@ -1,22 +1,21 @@
 "use client"
 
 import { updateProfile } from "@/actions/profile"
-
 import { useFormStatus } from "react-dom"
-import { useActionState } from "react"
+import { useActionState, useState, useRef } from "react"
 import { motion } from "framer-motion"
 
-function SubmitButton() {
+function SubmitButton({ isUploading }: { isUploading: boolean }) {
   const { pending } = useFormStatus()
   return (
     <motion.button
       type="submit"
-      disabled={pending}
+      disabled={pending || isUploading}
       className="px-6 py-3 rounded-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      {pending ? "Saving..." : "Save Changes"}
+      {isUploading ? "Uploading Files..." : pending ? "Saving Profile..." : "Save Changes"}
     </motion.button>
   )
 }
@@ -46,34 +45,102 @@ type ProfileType = {
 
 export function ProfileForm({ profile }: { profile: ProfileType }) {
   const [state, formAction] = useActionState(updateProfile, null)
+  const [isUploading, setIsUploading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Direct URLs state
+  const [avatarUrlDirect, setAvatarUrlDirect] = useState<string | null>(null)
+  const [bannerUrlDirect, setBannerUrlDirect] = useState<string | null>(null)
+  const [backgroundUrlDirect, setBackgroundUrlDirect] = useState<string | null>(null)
+
+  async function handleFileUpload(file: File, folder: 'images' | 'videos'): Promise<string | null> {
+    try {
+      // 1. Get presigned URL
+      const res = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          folder
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to get presigned URL');
+      const { uploadUrl, publicUrl } = await res.json();
+
+      // 2. Upload directly to R2
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload to R2');
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+  }
+
+  const enhancedAction = async (formData: FormData) => {
+    setIsUploading(true);
+
+    // Check for large files and upload them directly
+    const avatarFile = formData.get("avatarFile") as File | null;
+    const bannerFile = formData.get("bannerFile") as File | null;
+    const bgType = formData.get("backgroundType") as string;
+    const bgImageFile = formData.get("backgroundFileImage") as File | null;
+    const bgVideoFile = formData.get("backgroundFileVideo") as File | null;
+
+    if (avatarFile && avatarFile.size > 0) {
+      const url = await handleFileUpload(avatarFile, 'images');
+      if (url) formData.append("avatarUrlDirect", url);
+    }
+
+    if (bannerFile && bannerFile.size > 0) {
+      const url = await handleFileUpload(bannerFile, 'images');
+      if (url) formData.append("bannerUrlDirect", url);
+    }
+
+    if (bgType === 'image' && bgImageFile && bgImageFile.size > 0) {
+      const url = await handleFileUpload(bgImageFile, 'images');
+      if (url) formData.append("backgroundUrlDirect", url);
+    } else if (bgType === 'video' && bgVideoFile && bgVideoFile.size > 0) {
+      const url = await handleFileUpload(bgVideoFile, 'videos');
+      if (url) formData.append("backgroundUrlDirect", url);
+    }
+
+    setIsUploading(false);
+    formAction(formData);
+  };
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={enhancedAction} ref={formRef} className="space-y-8">
+      {/* Client-side script for tab switching */}
       <script dangerouslySetInnerHTML={{
         __html: `
         (function() {
           const backgroundType = document.getElementById('backgroundType');
           if (backgroundType) {
-            const colorFields = document.getElementById('color-fields');
-            const imageFields = document.getElementById('image-fields');
-            const videoFields = document.getElementById('video-fields');
-            
-            if (backgroundType.value === 'color') {
-              if (colorFields) colorFields.style.display = 'block';
-              if (imageFields) imageFields.style.display = 'none';
-              if (videoFields) videoFields.style.display = 'none';
-            } else if (backgroundType.value === 'image') {
-              if (colorFields) colorFields.style.display = 'none';
-              if (imageFields) imageFields.style.display = 'block';
-              if (videoFields) videoFields.style.display = 'none';
-            } else if (backgroundType.value === 'video') {
-              if (colorFields) colorFields.style.display = 'none';
-              if (imageFields) imageFields.style.display = 'none';
-              if (videoFields) videoFields.style.display = 'block';
-            }
+            const updateVisibility = () => {
+              const val = backgroundType.value;
+              const colorFields = document.getElementById('color-fields');
+              const imageFields = document.getElementById('image-fields');
+              const videoFields = document.getElementById('video-fields');
+              
+              if (colorFields) colorFields.style.display = val === 'color' ? 'block' : 'none';
+              if (imageFields) imageFields.style.display = val === 'image' ? 'block' : 'none';
+              if (videoFields) videoFields.style.display = val === 'video' ? 'block' : 'none';
+            };
+            backgroundType.onchange = updateVisibility;
+            updateVisibility();
           }
         })();
       `}} />
+
       {state?.error && (
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-mono">
           {state.error}
@@ -81,7 +148,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       )}
       {state?.success && (
         <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-mono">
-          Profile updated!
+          Profile updated successfully!
         </div>
       )}
 
@@ -212,7 +279,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
             defaultValue={profile.accentColor || "#a855f7"}
             onChange={(e) => {
               const colorInput = e.target.parentElement?.querySelector('input[type="color"]') as HTMLInputElement;
-              if (colorInput) colorInput.value = e.target.value;
+              if (colorInput) colorInput.value = (e.target as HTMLInputElement).value;
             }}
             className="flex-1 bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-mono"
           />
@@ -225,26 +292,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
           name="backgroundType"
           id="backgroundType"
           defaultValue={profile.backgroundType || "color"}
-          className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
-          onChange={(e) => {
-            const colorFields = document.getElementById('color-fields');
-            const imageFields = document.getElementById('image-fields');
-            const videoFields = document.getElementById('video-fields');
-
-            if (e.target.value === 'color') {
-              if (colorFields) colorFields.style.display = 'block';
-              if (imageFields) imageFields.style.display = 'none';
-              if (videoFields) videoFields.style.display = 'none';
-            } else if (e.target.value === 'image') {
-              if (colorFields) colorFields.style.display = 'none';
-              if (imageFields) imageFields.style.display = 'block';
-              if (videoFields) videoFields.style.display = 'none';
-            } else if (e.target.value === 'video') {
-              if (colorFields) colorFields.style.display = 'none';
-              if (imageFields) imageFields.style.display = 'none';
-              if (videoFields) videoFields.style.display = 'block';
-            }
-          }}
+          className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
         >
           <option value="color">Color</option>
           <option value="image">Image</option>
@@ -329,7 +377,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
               name="socialSoundcloud"
               defaultValue={profile.socialSoundcloud || ""}
               placeholder="SoundCloud Profile URL"
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
             />
           </div>
           <div className="space-y-3">
@@ -363,7 +411,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       </div>
 
       <div className="pt-6">
-        <SubmitButton />
+        <SubmitButton isUploading={isUploading} />
       </div>
     </form>
   )

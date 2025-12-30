@@ -23,6 +23,11 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   const bannerFile = formData.get("bannerFile") as File | null
   const backgroundFileImage = formData.get("backgroundFileImage") as File | null
   const backgroundFileVideo = formData.get("backgroundFileVideo") as File | null
+
+  // Direct R2 URLs from client-side upload
+  const avatarUrlDirect = formData.get("avatarUrlDirect") as string | null
+  const bannerUrlDirect = formData.get("bannerUrlDirect") as string | null
+  const backgroundUrlDirect = formData.get("backgroundUrlDirect") as string | null
   const accentColor = formData.get("accentColor") as string
   const cardStyle = formData.get("cardStyle") as string
   const backgroundType = formData.get("backgroundType") as string
@@ -49,6 +54,8 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   // Handle avatar upload
   if (removeAvatar) {
     avatarUrl = ""; // Clear the avatar
+  } else if (avatarUrlDirect) {
+    avatarUrl = avatarUrlDirect;
   } else if (avatarFile && avatarFile.size > 0) {
     try {
       // Validate file type
@@ -72,6 +79,8 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   // Handle banner upload
   if (removeBanner) {
     bannerUrl = ""; // Clear the banner
+  } else if (bannerUrlDirect) {
+    bannerUrl = bannerUrlDirect;
   } else if (bannerFile && bannerFile.size > 0) {
     try {
       // Validate file type
@@ -95,6 +104,8 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   // Handle background file upload (image or video)
   if (removeBackground) {
     updatedBackgroundValue = ""; // Clear the background
+  } else if (backgroundUrlDirect) {
+    updatedBackgroundValue = backgroundUrlDirect;
   } else if (backgroundType === 'image' && backgroundFileImage && backgroundFileImage.size > 0) {
     try {
       // Validate image file type
