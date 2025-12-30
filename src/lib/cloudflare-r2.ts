@@ -59,14 +59,14 @@ export async function uploadVideoToR2(
   await r2Client.send(command);
 
   // Return the public URL
-  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${encodeURI(key)}`;
   return publicUrl;
 }
 
 export async function generatePresignedUrl(
   fileName: string,
   mimeType: string,
-  folder: 'images' | 'videos' = 'images'
+  folder: 'images' | 'videos' | 'audio' = 'images'
 ): Promise<{ uploadUrl: string; publicUrl: string; key: string }> {
   const key = await getUniqueKey(folder, fileName);
 
@@ -78,7 +78,7 @@ export async function generatePresignedUrl(
 
   // URL expires in 3600 seconds (1 hour)
   const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
-  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${encodeURI(key)}`;
 
   return { uploadUrl, publicUrl, key };
 }
@@ -112,6 +112,6 @@ export async function uploadImageToR2(
   await r2Client.send(command);
 
   // Return the public URL
-  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${encodeURI(key)}`;
   return publicUrl;
 }

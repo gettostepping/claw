@@ -116,6 +116,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
     const [duration, setDuration] = useState(0)
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
     const [editingBeat, setEditingBeat] = useState<Beat | null>(null)
+    const [playbackError, setPlaybackError] = useState<string | null>(null)
 
     const activeBeat = beats.find(b => b.id === currentBeatId)
 
@@ -143,12 +144,28 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
             setIsPlaying(false)
             setCurrentTime(0)
         }
+        const handleError = (e: Event) => {
+            const error = audio.error;
+            let message = "Playback error";
+            if (error) {
+                switch (error.code) {
+                    case 1: message = "Playback aborted"; break;
+                    case 2: message = "Network error"; break;
+                    case 3: message = "Audio decoding failed"; break;
+                    case 4: message = "Format not supported"; break;
+                }
+            }
+            console.error(`Audio error (ID: ${currentBeatId}):`, message, error);
+            setPlaybackError(`Error playing beat: ${message}.`);
+            setIsPlaying(false);
+        }
 
         audio.addEventListener('timeupdate', updateTime)
         audio.addEventListener('loadedmetadata', handleLoadedMetadata)
         audio.addEventListener('play', handlePlay)
         audio.addEventListener('pause', handlePause)
         audio.addEventListener('ended', handleEnded)
+        audio.addEventListener('error', handleError)
 
         return () => {
             audio.removeEventListener('timeupdate', updateTime)
@@ -156,8 +173,9 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
             audio.removeEventListener('play', handlePlay)
             audio.removeEventListener('pause', handlePause)
             audio.removeEventListener('ended', handleEnded)
+            audio.removeEventListener('error', handleError)
         }
-    }, [])
+    }, [currentBeatId])
 
     useEffect(() => {
         if (audioRef.current) {
@@ -180,11 +198,16 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
         const audio = audioRef.current
         if (!audio) return
 
+        setPlaybackError(null) // Reset error on any interaction
+
         if (currentBeatId === beatId) {
             if (isPlaying) {
                 audio.pause()
             } else {
-                audio.play().catch(console.error)
+                audio.play().catch((err) => {
+                    console.error("Play error:", err)
+                    setPlaybackError("Failed to play this beat.")
+                })
             }
         } else {
             const beat = beats.find(b => b.id === beatId)
@@ -193,7 +216,10 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                 setDuration(0) // Reset duration for new beat
                 audio.src = beat.url
                 audio.load() // Explicitly load
-                audio.play().catch(console.error)
+                audio.play().catch((err) => {
+                    console.error("Load/Play error:", err)
+                    setPlaybackError("Failed to load this beat.")
+                })
                 setCurrentTime(0)
             }
         }
@@ -230,8 +256,17 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                 </h3>
             </div>
 
+            {playbackError && (
+                <div className="mb-4 p-2 bg-red-500/10 border border-red-500/20 rounded text-[10px] text-red-500 flex items-center justify-between">
+                    <span>{playbackError}</span>
+                    <button onClick={() => setPlaybackError(null)} className="hover:text-red-400">
+                        <X size={12} />
+                    </button>
+                </div>
+            )}
+
             <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-current/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-current/20">
-                {beats.length === 0 && <div className="text-center text-gray-500 text-sm py-8">No beats uploaded yet</div>}
+                {beats.length === 0 && <div className="text-center opacity-50 text-sm py-8">No beats uploaded yet</div>}
 
                 {beats.map((beat) => {
                     const isActive = currentBeatId === beat.id
@@ -249,7 +284,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                                 {beat.coverUrl ? (
                                     <img src={beat.coverUrl} alt={beat.title} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                    <div className="w-full h-full flex items-center justify-center opacity-50">
                                         <Music size={20} />
                                     </div>
                                 )}
@@ -267,7 +302,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                                     {beat.title}
                                 </h4>
                                 {beat.artist && (
-                                    <p className="text-[10px] text-neutral-500 font-mono uppercase tracking-tighter truncate">
+                                    <p className="text-[10px] opacity-70 font-mono uppercase tracking-tighter truncate">
                                         {beat.artist}
                                     </p>
                                 )}

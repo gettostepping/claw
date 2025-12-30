@@ -1,6 +1,6 @@
 "use client"
 
-import { Instagram, Youtube, CloudLightning, Disc, Copy, Check } from "lucide-react"
+import { Instagram, Youtube, CloudLightning, Disc, Copy, Check, Music } from "lucide-react"
 import { useState } from "react"
 import { motion } from "framer-motion"
 
@@ -8,10 +8,11 @@ interface SocialsProps {
   soundcloud?: string | null
   youtube?: string | null
   instagram?: string | null
+  spotify?: string | null
   discord?: string | null
 }
 
-export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: SocialsProps) {
+export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discord }: SocialsProps) {
   const [copied, setCopied] = useState(false)
 
   const handleCopyDiscord = () => {
@@ -22,7 +23,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
     }
   }
 
-  if (!soundcloud && !youtube && !instagram && !discord) return null
+  if (!soundcloud && !youtube && !instagram && !spotify && !discord) return null
 
   return (
     <div className="flex items-center justify-center gap-4 py-2">
@@ -65,6 +66,20 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, discord }: Soci
           whileTap={{ scale: 0.9 }}
         >
           <Instagram size={20} />
+        </motion.a>
+      )}
+
+      {spotify && (
+        <motion.a
+          href={spotify}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="opacity-100 hover:opacity-100 hover:text-[#1DB954] transition-all"
+          title="Spotify"
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <Music size={20} />
         </motion.a>
       )}
 

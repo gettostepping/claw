@@ -54,6 +54,7 @@ model Profile {
   socialSoundcloud String?
   socialYoutube    String?
   socialInstagram  String?
+  socialSpotify    String?
   socialDiscord    String?
 
   createdAt DateTime @default(now())

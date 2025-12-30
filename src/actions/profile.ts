@@ -39,6 +39,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   const socialSoundcloud = formData.get("socialSoundcloud") as string
   const socialYoutube = formData.get("socialYoutube") as string
   const socialInstagram = formData.get("socialInstagram") as string
+  const socialSpotify = formData.get("socialSpotify") as string
   const socialDiscord = formData.get("socialDiscord") as string
 
   // Initialize URLs with existing values
@@ -166,6 +167,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         socialSoundcloud,
         socialYoutube,
         socialInstagram,
+        socialSpotify,
         socialDiscord,
         backgroundEffect,
         nameEffect,

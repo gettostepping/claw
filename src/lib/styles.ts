@@ -20,8 +20,10 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
 
     const styles: Record<CardStyle, StyleConfig> = {
         standard: {
-            card: "bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl",
-            avatar: "rounded-full border-2 border-white/20",
+            card: isBlackText
+                ? "bg-white/40 backdrop-blur-md border border-neutral-950/10 shadow-2xl rounded-2xl"
+                : "bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl",
+            avatar: isBlackText ? "rounded-full border-2 border-neutral-950/20" : "rounded-full border-2 border-white/20",
             font: "",
             text: isBlackText ? "text-neutral-950" : "text-white",
             glow: `shadow-[0_0_20px_rgba(${r},${g},${b},0.2)]`
@@ -44,7 +46,9 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
             glow: ""
         },
         neon: {
-            card: "rounded-xl bg-black/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]",
+            card: isBlackText
+                ? "rounded-xl bg-white/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(255,255,255,0.5)]"
+                : "rounded-xl bg-black/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]",
             avatar: "rounded-full border-2 shadow-[0_0_15px_rgba(0,0,0,0.3)]",
             font: "font-sans tracking-tight",
             text: isBlackText ? "text-neutral-950" : "text-white",

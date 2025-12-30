@@ -434,31 +434,17 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {isOwner && (
-        <>
-          <form action={formAction} className="mb-6 flex-shrink-0">
-            <UploadForm />
-          </form>
-          {uploadState?.error && (
-            <p className="text-xs text-red-500 mb-2 flex-shrink-0">{uploadState.error}</p>
-          )}
-          {uploadState?.success && (
-            <p className="text-xs text-green-500 mb-2 flex-shrink-0">Track uploaded successfully!</p>
-          )}
-        </>
-      )}
 
-      {!isOwner && (
-        <div className="mb-4 flex items-center justify-between flex-shrink-0">
-          <h3 className="font-bold text-lg flex items-center gap-2">
-            <Music size={20} style={{ color: accentColor }} />
-            SoundCloud Tracks
-          </h3>
-        </div>
-      )}
+
+      <div className="mb-4 flex items-center justify-between flex-shrink-0">
+        <h3 className="font-bold text-lg flex items-center gap-2">
+          <Music size={20} style={{ color: accentColor }} />
+          SoundCloud Tracks
+        </h3>
+      </div>
 
       <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-current/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-current/20">
-        {tracks.length === 0 && <div className="text-center text-gray-500 text-sm">No tracks yet</div>}
+        {tracks.length === 0 && <div className="text-center opacity-50 text-sm">No tracks yet</div>}
 
         {tracks.map((track) => {
           const isActive = currentTrack === track.id
@@ -482,7 +468,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
                 {track.coverUrl ? (
                   <img src={track.coverUrl} alt={track.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-500">
+                  <div className="w-full h-full flex items-center justify-center opacity-50">
                     <Music size={20} />
                   </div>
                 )}

@@ -37,6 +37,7 @@ type ProfileType = {
   socialSoundcloud?: string | null;
   socialYoutube?: string | null;
   socialInstagram?: string | null;
+  socialSpotify?: string | null;
   socialDiscord?: string | null;
   createdAt: Date;
   cardStyle?: string;
@@ -481,15 +482,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
             Socials
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">SoundCloud</label>
-              <input
-                name="socialSoundcloud"
-                defaultValue={profile.socialSoundcloud || ""}
-                placeholder="SoundCloud Profile URL"
-                className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
-              />
-            </div>
+
             <div className="space-y-3">
               <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">YouTube</label>
               <input
@@ -505,6 +498,15 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
                 name="socialInstagram"
                 defaultValue={profile.socialInstagram || ""}
                 placeholder="Instagram Profile URL"
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Spotify</label>
+              <input
+                name="socialSpotify"
+                defaultValue={profile.socialSpotify || ""}
+                placeholder="Spotify Profile/Artist URL"
                 className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
               />
             </div>

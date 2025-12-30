@@ -72,6 +72,7 @@ interface ProfileCardProps {
     socialSoundcloud: string | null
     socialYoutube: string | null
     socialInstagram: string | null
+    socialSpotify: string | null
     socialDiscord: string | null
     links: {
       id: string
@@ -138,7 +139,7 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
       {profile.showViews && (
         <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/20 backdrop-blur-md border border-white/5 text-[10px] font-mono opacity-60 hover:opacity-100 transition-opacity">
           <Eye size={12} className="text-neutral-400" />
-          <span>{profile.views.toLocaleString()}</span>
+          <span className="text-white">{profile.views.toLocaleString()}</span>
         </div>
       )}
 
@@ -245,6 +246,7 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
           soundcloud={profile.socialSoundcloud}
           youtube={profile.socialYoutube}
           instagram={profile.socialInstagram}
+          spotify={profile.socialSpotify}
           discord={profile.socialDiscord}
         />
 
@@ -272,7 +274,7 @@ export function ProfileCardWithMusic({ username, profile, tracks, beats, isOwner
   const video = profile.videos[0] // Get the first video (or latest uploaded)
   const accentColor = profile.accentColor || "#a855f7"
   const cardStyle = profile.cardStyle || "standard"
-  const styles = getCardStyles(cardStyle, accentColor)
+  const styles = getCardStyles(cardStyle, accentColor, (profile as any).textTheme || "white")
 
   const isNeon = cardStyle === "neon"
   const isBrutal = cardStyle === "brutal"
