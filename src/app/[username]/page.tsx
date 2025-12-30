@@ -28,6 +28,19 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   return {
     title: `${user.profile.displayName} (@${user.username}) | clawsome.world`,
     description: user.profile.bio || "Check out my profile on clawsome.world",
+    openGraph: {
+      title: `${user.profile.displayName} (@${user.username})`,
+      description: user.profile.bio || "Check out my profile on clawsome.world",
+      images: user.profile.avatarUrl ? [user.profile.avatarUrl] : [],
+      type: 'profile',
+      username: user.username || undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${user.profile.displayName} (@${user.username})`,
+      description: user.profile.bio || "Check out my profile on clawsome.world",
+      images: user.profile.avatarUrl ? [user.profile.avatarUrl] : [],
+    }
   }
 }
 
