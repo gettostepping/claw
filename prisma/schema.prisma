@@ -40,7 +40,8 @@ model Profile {
   bannerUrl       String?
   backgroundType  String // color | gradient | image | video
   backgroundValue String // hex | css gradient | image url | mp4
-  themePreset     String
+  accentColor     String  @default("#a855f7")
+  cardStyle       String  @default("standard")
   blurBackground  Boolean @default(false)
   showViews       Boolean @default(true)
   views           Int     @default(0)

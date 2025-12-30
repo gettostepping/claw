@@ -1,5 +1,7 @@
 "use client";
 
+import { signOut, useSession } from "next-auth/react";
+
 import { motion } from "framer-motion";
 import { useActionState } from "react";
 import { completeRegistration } from "@/actions/auth";
@@ -10,20 +12,26 @@ import Link from "next/link";
 export default function RegisterPageClient() {
   const [state, formAction] = useActionState(completeRegistration, null);
   const router = useRouter();
+  const { update } = useSession();
 
   useEffect(() => {
     if (state?.success) {
-      // Redirect to dashboard after a short delay to show success message
-      const timer = setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
-      return () => clearTimeout(timer);
+      // Force a session update to get the new username into the token
+      const refreshAndRedirect = async () => {
+        await update();
+        // Redirect to dashboard after a short delay to show success message
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+      };
+
+      refreshAndRedirect();
     }
-  }, [state, router]);
+  }, [state, router, update]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         className="w-full max-w-md bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -86,7 +94,15 @@ export default function RegisterPageClient() {
         </form>
 
         <div className="mt-6 text-center text-sm text-neutral-500">
-          <p>Already have an account? <Link href="/login" className="text-purple-400 hover:underline">Sign in</Link></p>
+          <p>
+            Wrong account?{" "}
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-purple-400 hover:underline"
+            >
+              Sign out
+            </button>
+          </p>
         </div>
       </motion.div>
     </div>

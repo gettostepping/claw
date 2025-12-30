@@ -61,6 +61,9 @@ export async function getInvites() {
 
   try {
     const invites = await prisma.invite.findMany({
+      where: {
+        createdBy: session.user.id,
+      },
       include: {
         creator: {
           select: {

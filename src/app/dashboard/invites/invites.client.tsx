@@ -12,8 +12,8 @@ interface Invite {
   used: boolean;
   createdAt: Date;
   expiresAt: Date | null;
-  creator: { username: string | null; email: string };
-  user: { username: string | null; email: string } | null;
+  creator: { username: string | null; email: string | null };
+  user: { username: string | null; email: string | null } | null;
 }
 
 export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
@@ -49,7 +49,7 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <motion.div 
+        <motion.div
           className="mb-8 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,15 +105,14 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
                             )}
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              invite.used 
-                                ? 'bg-green-500/20 text-green-400' 
+                            <span className={`px-2 py-1 rounded-full text-xs ${invite.used
+                                ? 'bg-green-500/20 text-green-400'
                                 : invite.expiresAt && new Date(invite.expiresAt) < new Date()
                                   ? 'bg-red-500/20 text-red-400'
                                   : 'bg-yellow-500/20 text-yellow-400'
-                            }`}>
-                              {invite.used 
-                                ? 'Used' 
+                              }`}>
+                              {invite.used
+                                ? 'Used'
                                 : invite.expiresAt && new Date(invite.expiresAt) < new Date()
                                   ? 'Expired'
                                   : 'Active'}
@@ -123,8 +122,8 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
                             {new Date(invite.createdAt).toLocaleDateString()}
                           </td>
                           <td className="py-3 px-4">
-                            {invite.expiresAt 
-                              ? new Date(invite.expiresAt).toLocaleDateString() 
+                            {invite.expiresAt
+                              ? new Date(invite.expiresAt).toLocaleDateString()
                               : 'Never'}
                           </td>
                           <td className="py-3 px-4">
@@ -150,10 +149,10 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
           <div>
             <form onSubmit={async (e) => {
               e.preventDefault();
-              
+
               const formData = new FormData(e.currentTarget);
               const expiresAt = formData.get('expiresAt') as string;
-              
+
               try {
                 const response = await fetch('/api/invites/create', {
                   method: 'POST',
@@ -162,7 +161,7 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
                   },
                   body: JSON.stringify({ expiresAt: expiresAt || null }),
                 });
-                
+
                 if (response.ok) {
                   // Refresh the page to show the new invite
                   window.location.reload();
@@ -176,7 +175,7 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
               }
             }} className="bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-6">
               <h3 className="text-xl font-bold mb-4">Create New Invite</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">
@@ -200,7 +199,7 @@ export default function InvitesPageClient({ invites }: { invites: Invite[] }) {
                 </motion.button>
               </div>
             </form>
-            
+
             <div className="mt-8 bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-6">
               <h3 className="text-xl font-bold mb-4">Invite System Info</h3>
               <ul className="space-y-2 text-sm text-neutral-400">

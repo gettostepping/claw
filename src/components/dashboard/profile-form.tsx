@@ -30,7 +30,7 @@ type ProfileType = {
   bannerUrl?: string | null;
   backgroundType: string;
   backgroundValue: string;
-  themePreset: string;
+  accentColor: string;
   blurBackground: boolean;
   showViews: boolean;
   views: number;
@@ -39,6 +39,7 @@ type ProfileType = {
   socialInstagram?: string | null;
   socialDiscord?: string | null;
   createdAt: Date;
+  cardStyle?: string;
 };
 
 export function ProfileForm({ profile }: { profile: ProfileType }) {
@@ -46,19 +47,27 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
 
   return (
     <form action={formAction} className="space-y-8">
-      <script dangerouslySetInnerHTML={{__html: `
+      <script dangerouslySetInnerHTML={{
+        __html: `
         (function() {
           const backgroundType = document.getElementById('backgroundType');
           if (backgroundType) {
             const colorFields = document.getElementById('color-fields');
             const imageFields = document.getElementById('image-fields');
+            const videoFields = document.getElementById('video-fields');
             
             if (backgroundType.value === 'color') {
               if (colorFields) colorFields.style.display = 'block';
               if (imageFields) imageFields.style.display = 'none';
-            } else {
+              if (videoFields) videoFields.style.display = 'none';
+            } else if (backgroundType.value === 'image') {
               if (colorFields) colorFields.style.display = 'none';
               if (imageFields) imageFields.style.display = 'block';
+              if (videoFields) videoFields.style.display = 'none';
+            } else if (backgroundType.value === 'video') {
+              if (colorFields) colorFields.style.display = 'none';
+              if (imageFields) imageFields.style.display = 'none';
+              if (videoFields) videoFields.style.display = 'block';
             }
           }
         })();
@@ -141,23 +150,39 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       </div>
 
       <div className="space-y-3">
-        <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Theme Preset</label>
+        <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Card Style</label>
         <select
-          name="themePreset"
-          defaultValue={profile.themePreset || "grime"}
+          name="cardStyle"
+          defaultValue={profile.cardStyle || "standard"}
           className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
         >
-          <option value="grime">Grime</option>
-          <option value="basement">Basement</option>
-          <option value="neon_trap">Neon Trap</option>
-          <option value="raw_tape">Raw Tape</option>
-          <option value="cyberpunk">Cyberpunk</option>
-          <option value="dark_ambient">Dark Ambient</option>
-          <option value="vaporwave">Vaporwave</option>
-          <option value="lofi">Lofi</option>
-          <option value="punk">Punk</option>
-          <option value="trap">Trap</option>
+          <option value="standard">Standard (Glass)</option>
+          <option value="brutal">Brutal (Solid)</option>
+          <option value="minimal">Minimal (Transparent)</option>
+          <option value="neon">Neon (Glowing)</option>
+          <option value="soft">Soft (Rounded)</option>
         </select>
+      </div>
+
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Accent Color</label>
+        <div className="flex items-center gap-3">
+          <input
+            name="accentColor"
+            type="color"
+            defaultValue={profile.accentColor || "#a855f7"}
+            className="w-12 h-10 border border-white/10 rounded-lg cursor-pointer bg-transparent"
+          />
+          <input
+            type="text"
+            defaultValue={profile.accentColor || "#a855f7"}
+            onChange={(e) => {
+              const colorInput = e.target.parentElement?.querySelector('input[type="color"]') as HTMLInputElement;
+              if (colorInput) colorInput.value = e.target.value;
+            }}
+            className="flex-1 bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-mono"
+          />
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -170,24 +195,32 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
           onChange={(e) => {
             const colorFields = document.getElementById('color-fields');
             const imageFields = document.getElementById('image-fields');
-            
+            const videoFields = document.getElementById('video-fields');
+
             if (e.target.value === 'color') {
               if (colorFields) colorFields.style.display = 'block';
               if (imageFields) imageFields.style.display = 'none';
-            } else {
+              if (videoFields) videoFields.style.display = 'none';
+            } else if (e.target.value === 'image') {
               if (colorFields) colorFields.style.display = 'none';
               if (imageFields) imageFields.style.display = 'block';
+              if (videoFields) videoFields.style.display = 'none';
+            } else if (e.target.value === 'video') {
+              if (colorFields) colorFields.style.display = 'none';
+              if (imageFields) imageFields.style.display = 'none';
+              if (videoFields) videoFields.style.display = 'block';
             }
           }}
         >
           <option value="color">Color</option>
           <option value="image">Image</option>
+          <option value="video">Video</option>
         </select>
       </div>
 
       <div className="space-y-3">
         <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Background Value</label>
-        <div id="color-fields" style={{display: profile.backgroundType === 'color' ? 'block' : 'none'}}>
+        <div id="color-fields" style={{ display: profile.backgroundType === 'color' ? 'block' : 'none' }}>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <input
@@ -207,23 +240,44 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
             <p className="text-xs text-neutral-500">Click the color box to open color picker, or enter hex code</p>
           </div>
         </div>
-        <div id="image-fields" style={{display: profile.backgroundType === 'image' ? 'block' : 'none'}}>
+        <div id="image-fields" style={{ display: profile.backgroundType === 'image' ? 'block' : 'none' }}>
           <input
-            name="backgroundFile"
+            name="backgroundFileImage"
             type="file"
             accept="image/*"
             className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 transition-all"
           />
-          <p className="text-xs text-neutral-500">Current: {profile.backgroundValue && (profile.backgroundType === 'image') ? <a href={profile.backgroundValue} target="_blank" className="text-purple-400 hover:underline">View current background</a> : 'No background image set'}</p>
+          <p className="text-xs text-neutral-500">Current: {profile.backgroundValue && (profile.backgroundType === 'image') ? <a href={profile.backgroundValue} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">View current background</a> : 'No background image set'}</p>
           {profile.backgroundValue && (profile.backgroundType === 'image') && (
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 name="removeBackground"
-                id="removeBackground"
+                id="removeBackgroundImage"
                 className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
               />
-              <label htmlFor="removeBackground" className="text-sm text-neutral-400">Remove current background</label>
+              <label htmlFor="removeBackgroundImage" className="text-sm text-neutral-400">Remove current background</label>
+            </div>
+          )}
+        </div>
+        <div id="video-fields" style={{ display: profile.backgroundType === 'video' ? 'block' : 'none' }}>
+          <input
+            name="backgroundFileVideo"
+            type="file"
+            accept="video/mp4,video/webm,video/ogg"
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 transition-all"
+          />
+          <p className="text-xs text-neutral-500 mt-2">Upload a video (MP4, WebM, OGG). Max 50MB. Video will be muted and loop automatically.</p>
+          <p className="text-xs text-neutral-500">Current: {profile.backgroundValue && (profile.backgroundType === 'video') ? <a href={profile.backgroundValue} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">View current video</a> : 'No background video set'}</p>
+          {profile.backgroundValue && (profile.backgroundType === 'video') && (
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                name="removeBackground"
+                id="removeBackgroundVideo"
+                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+              />
+              <label htmlFor="removeBackgroundVideo" className="text-sm text-neutral-400">Remove current video</label>
             </div>
           )}
         </div>

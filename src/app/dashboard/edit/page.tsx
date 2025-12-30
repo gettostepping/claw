@@ -16,19 +16,19 @@ export default async function EditProfilePage() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: { 
+    include: {
       profile: {
         include: {
-            links: { orderBy: { order: "asc" } },
-            musicEmbeds: true,
-            videos: true
+          links: { orderBy: { order: "asc" } },
+          musicEmbeds: true,
+          videos: true
         }
-      } 
+      }
     },
   })
 
   if (!user?.profile) {
-    redirect("/dashboard") 
+    redirect("/dashboard")
   }
 
   return (
@@ -47,7 +47,7 @@ export default async function EditProfilePage() {
           <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
           <h2 className="text-2xl font-bold">Profile Settings</h2>
         </div>
-        <ProfileForm profile={user.profile} />
+        <ProfileForm profile={user.profile} key={JSON.stringify(user.profile)} />
       </div>
 
       {/* Links Section */}

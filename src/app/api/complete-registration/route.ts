@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         bannerUrl: null,
         backgroundType: "color",
         backgroundValue: "#000000",
-        themePreset: "grime",
+        accentColor: "#a855f7",
         blurBackground: false,
         showViews: true,
         views: 0,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     });
 
     revalidatePath("/dashboard");
-    
+
     // Return success response with redirect URL
     return Response.json({ success: true, redirectUrl: "/dashboard" });
   } catch (error) {

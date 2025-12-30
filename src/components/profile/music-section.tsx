@@ -17,7 +17,7 @@ interface Track {
 
 function UploadForm() {
   const { pending } = useFormStatus()
-  
+
   return (
     <div className="flex gap-2">
       <input
@@ -66,10 +66,10 @@ function EditTrackModal({ track, isOpen, onClose, onSuccess }: EditTrackModalPro
             <X size={20} />
           </button>
         </div>
-        
+
         <form ref={formRef} action={formAction} className="space-y-4">
           <input type="hidden" name="trackId" value={track.id} />
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Title</label>
             <input
@@ -79,7 +79,7 @@ function EditTrackModal({ track, isOpen, onClose, onSuccess }: EditTrackModalPro
               className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-white focus:outline-none focus:border-neutral-600"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Cover Image URL</label>
             <input
@@ -116,7 +116,7 @@ function EditTrackModal({ track, isOpen, onClose, onSuccess }: EditTrackModalPro
   )
 }
 
-export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: boolean }) {
+export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tracks: Track[], isOwner: boolean, accentColor?: string }) {
   const router = useRouter()
   const [currentTrack, setCurrentTrack] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -126,11 +126,11 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
   const lastSrcRef = useRef<string | null>(null)
   const [uploadState, formAction] = useActionState(uploadTrack, null)
   const loadedTracksRef = useRef<Map<string, string>>(new Map())
-  
+
   // Simple state for current track's time and duration (like the working Soundcloud implementation)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  
+
   // Menu and edit modal state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [editingTrack, setEditingTrack] = useState<Track | null>(null)
@@ -237,7 +237,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
     if (!src) {
       src = activeTrack.streamUrl
     }
-    
+
     if (!src) {
       if (audio.src) {
         audio.pause()
@@ -258,7 +258,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
       lastSrcRef.current = src
       audio.src = src
       audio.load()
-      
+
       // Duration will be set by the audio event listeners
     }
   }, [currentTrack, activeTrack, playingSrc])
@@ -291,7 +291,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
 
   const fetchFreshUrl = async (trackId: string) => {
     try {
-      const res = await fetch(`/api/track/${trackId}/refresh`, { 
+      const res = await fetch(`/api/track/${trackId}/refresh`, {
         cache: "no-store",
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -309,7 +309,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
 
   const handlePlay = async (trackId: string) => {
     const audio = audioRef.current
-    
+
     if (currentTrack === trackId && isPlaying) {
       if (audio) {
         audio.pause()
@@ -345,16 +345,16 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
     setCurrentTime(0)
     setDuration(0) // Reset duration when switching tracks
     setIsPlaying(false)
-    
+
     if (audio && currentTrack && currentTrack !== trackId) {
       audio.pause()
       audio.removeAttribute("src")
       audio.load()
       lastSrcRef.current = null
     }
-    
+
     const fresh = await fetchFreshUrl(trackId)
-    
+
     if (fresh) {
       loadedTracksRef.current.set(trackId, fresh)
       setPlayingSrc(fresh)
@@ -368,7 +368,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
   const handleSeek = (trackId: string, ratio: number) => {
     const audio = audioRef.current
     if (!audio || currentTrack !== trackId) return
-    
+
     const audioDuration = audio.duration || duration
     if (audioDuration > 0) {
       const newTime = ratio * audioDuration
@@ -379,7 +379,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
 
   const handleDelete = async (trackId: string) => {
     if (!confirm("Are you sure you want to delete this track?")) return
-    
+
     const result = await deleteTrack(trackId)
     if (result?.success) {
       router.refresh()
@@ -417,21 +417,21 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
 
       <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
         {tracks.length === 0 && <div className="text-center text-gray-500 text-sm">No tracks yet</div>}
-        
+
         {tracks.map((track) => {
           const isActive = currentTrack === track.id
           const showMenu = openMenuId === track.id
-          
+
           // For active track, use current state; for others, show 0
           const trackCurrentTime = isActive ? currentTime : 0
           const trackDuration = isActive ? duration : 0
-          
-          const progressPercent = trackDuration > 0 
-            ? Math.min((trackCurrentTime / trackDuration) * 100, 100) 
+
+          const progressPercent = trackDuration > 0
+            ? Math.min((trackCurrentTime / trackDuration) * 100, 100)
             : 0
-          
+
           return (
-            <div 
+            <div
               key={track.id}
               className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}
             >
@@ -451,13 +451,13 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
                   {isActive && isPlaying ? <Pause size={20} /> : <Play size={20} />}
                 </button>
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <h4 className={`font-medium text-sm truncate ${isActive ? 'text-white' : 'text-gray-300'}`}>
                   {cleanTitle(track.title)}
                 </h4>
                 <div className="mt-1 flex items-center gap-3">
-                  <div 
+                  <div
                     className="flex-1 h-1.5 rounded bg-white/10 overflow-hidden cursor-pointer relative"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -466,9 +466,9 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
                       handleSeek(track.id, ratio)
                     }}
                   >
-                    <div 
+                    <div
                       className="h-full bg-white/60 transition-all"
-                      style={{ 
+                      style={{
                         width: `${progressPercent}%`,
                         minWidth: progressPercent > 0 ? "2px" : "0px"
                       }}
@@ -488,7 +488,8 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
                       step={0.01}
                       value={volume}
                       onChange={(e) => setVolume(parseFloat(e.target.value))}
-                      className="w-16 h-1.5 accent-white/80"
+                      className="w-16 h-1.5"
+                      style={{ accentColor: accentColor }}
                       aria-label="Volume"
                     />
                   </div>
@@ -505,7 +506,7 @@ export function MusicSection({ tracks, isOwner }: { tracks: Track[], isOwner: bo
                         <MoreVertical size={16} />
                       </button>
                       {showMenu && (
-                        <div 
+                        <div
                           className="absolute right-0 top-8 bg-neutral-800 rounded border border-neutral-700 shadow-lg z-10 min-w-[120px]"
                           onClick={(e) => e.stopPropagation()}
                         >

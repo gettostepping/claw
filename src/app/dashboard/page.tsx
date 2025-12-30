@@ -26,7 +26,7 @@ export default async function DashboardPage() {
         displayName: user.username || session.user.name || "User",
         backgroundType: "color",
         backgroundValue: "#000000",
-        themePreset: "grime",
+        accentColor: "#a855f7",
       },
     })
     // Refetch
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-neutral-400 font-mono text-sm">welcome back, {user.username}</p>
       </div>
-      
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl hover:border-white/20 transition-all group">
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
             {user.profile.views.toLocaleString()}
           </p>
         </div>
-        
+
         <div className="p-6 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl hover:border-white/20 transition-all group">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-neutral-400 text-sm font-medium uppercase tracking-wider">Status</h3>
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
             </div>
             <p className="text-sm text-neutral-400">Customize your profile appearance</p>
           </Link>
-          
+
           <Link
             href={`/@${user.username || user.id}`}
             target="_blank"

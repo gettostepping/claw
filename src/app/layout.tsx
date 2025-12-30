@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MouseFollower } from "@/components/effects/mouse-follower";
 import { ClickEffect } from "@/components/effects/click-effect";
+import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "claw.some",
+  title: "clawsome.world",
   description: "Your digital sanctuary",
 };
 
@@ -29,9 +30,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MouseFollower />
-        <ClickEffect />
-        {children}
+        <Providers>
+          <MouseFollower />
+          <ClickEffect />
+          {children}
+        </Providers>
       </body>
     </html>
   );

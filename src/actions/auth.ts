@@ -65,7 +65,7 @@ export async function completeRegistration(prevState: unknown, formData: FormDat
         bannerUrl: null,
         backgroundType: "color",
         backgroundValue: "#000000",
-        themePreset: "grime",
+        accentColor: "#a855f7",
         blurBackground: false,
         showViews: true,
         views: 0,

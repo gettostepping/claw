@@ -12,47 +12,72 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  useSecureCookies: process.env.NODE_ENV === "production",
   cookies: {
-    pkceCodeVerifier: {
-      name: "next-auth.pkce.code_verifier",
+    sessionToken: {
+      name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
-        path: "/",
+        sameSite: 'lax',
+        path: '/',
         secure: process.env.NODE_ENV === "production"
       }
     },
-    state: {
-      name: "next-auth.state",
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === "production"
+      }
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
-        path: "/",
+        sameSite: 'lax',
+        path: '/',
         secure: process.env.NODE_ENV === "production"
+      }
+    },
+    pkceCodeVerifier: {
+      name: `next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 900
+      }
+    },
+    state: {
+      name: `next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 900
       }
     }
   },
   pages: {
     signIn: "/login",
   },
+  debug: process.env.NODE_ENV === "development",
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
+          prompt: "select_account",
+          access_type: "offline",
+          response_type: "code"
         },
-      },
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name || profile.email?.split("@")[0],
-          email: profile.email,
-          image: profile.picture,
-          // emailVerified will be set by the adapter
-          // Don't set username here - let users set it during registration
-        }
       },
     }),
     DiscordProvider({
@@ -89,7 +114,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user.id,
           email: user.email,
-          name: user.username,
+          name: user.username ?? undefined,
           image: user.image,
         }
       },
@@ -97,75 +122,54 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // With PrismaAdapter, user and account linking is handled automatically
-      // We just need to make sure to allow the sign-in and handle any custom logic
-      
-      if (account?.provider === "google" && profile && user.email) {
-        // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-        
-        if (!existingUser) {
-          // User doesn't exist, they will be created by the adapter
-          // The adapter creates the user after this callback, so we need to update the role
-          // after the user is created. We'll handle this in the jwt callback.
-        } else {
-          // User exists, update their image if needed
-          // Only update if they don't have an image set or if it's different
-          if (!existingUser.image) {
-            const profilePicture = (profile as { picture?: string; image?: string }).picture || (profile as { picture?: string; image?: string }).image;
-            await prisma.user.update({
-              where: { id: existingUser.id },
-              data: { image: profilePicture || null }
-            });
-          }
-        }
-      }
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // If the URL is for register and it's within our domain, allow it
-      if (url.startsWith(baseUrl) && url.includes('/register')) {
-        return Promise.resolve(url);
-      }
-      
-      // For other cases, if URL is safe and within our domain, use it
-      if (url.startsWith(baseUrl)) {
-        return Promise.resolve(url);
-      }
-      
-      // Default fallback
-      return Promise.resolve(baseUrl + '/register');
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      if (trigger === "update") {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: token.id as string }
+        });
+        if (freshUser) {
+          token.username = freshUser.username;
+          token.role = freshUser.role;
+          token.image = freshUser.image;
+        }
+      }
+
       if (user) {
         token.id = user.id
         token.name = user.name
         token.email = user.email
         token.image = user.image
-        token.username = user.username || null
+        token.username = (user as any).username || null
         token.role = (user as { role?: string }).role || 'member'
       }
       if (account && user) {
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
         token.expiresAt = account.expires_at
-        
+
         // If this is a Google OAuth sign-in for a new user, ensure proper role assignment
         if (account.provider === 'google' && user.email) {
           // Check if the user already has a role set
           if (!token.role || token.role === 'member') {
             const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
             const isAdmin = user.email === adminEmail;
-            
+
             if (isAdmin && token.role !== 'admin') {
               // Update the user in the database to set admin role
               await prisma.user.update({
                 where: { id: user.id },
                 data: { role: 'admin' }
               });
-              
+
               token.role = 'admin';
             }
           }
