@@ -1,22 +1,18 @@
 "use server";
 
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 
-export async function completeRegistration(prevState: unknown, formData: FormData) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return { error: "Not authenticated" };
-  }
-
+export async function signUp(prevState: unknown, formData: FormData) {
+  const email = formData.get("email") as string;
   const username = formData.get("username") as string;
+  const password = formData.get("password") as string;
   const inviteCode = formData.get("inviteCode") as string;
 
-  // Validate username
-  if (!username) {
-    return { error: "Username is required" };
+  // Basic validation
+  if (!email || !username || !password || !inviteCode) {
+    return { error: "All fields are required" };
   }
 
   if (username.length < 3 || username.length > 30) {
@@ -27,54 +23,81 @@ export async function completeRegistration(prevState: unknown, formData: FormDat
     return { error: "Username can only contain letters, numbers, and underscores" };
   }
 
-  // Check if username is already taken
-  const existingUser = await prisma.user.findUnique({
-    where: { username },
-  });
-
-  if (existingUser) {
-    return { error: "Username is already taken" };
-  }
-
-  // Validate invite code (in a real app, you'd check this against a database of valid codes)
-  if (!inviteCode) {
-    return { error: "Invite code is required" };
-  }
-
-  // Use the invite code system to validate the invite
-  const { validateInviteCode } = await import("@/actions/invites");
-  const inviteResult = await validateInviteCode(inviteCode, session.user.id);
-  if (inviteResult.error) {
-    return { error: inviteResult.error };
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
   }
 
   try {
-    // Update the user with the username
-    await prisma.user.update({
-      where: { email: session.user.email },
-      data: { username },
+    // 1. Check if user/email already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username }
+        ]
+      }
     });
 
-    // Create a profile for the user
-    await prisma.profile.create({
-      data: {
-        userId: session.user.id,
-        displayName: session.user.name || username,
-        bio: null,
-        avatarUrl: session.user.image || null,
-        bannerUrl: null,
-        backgroundType: "color",
-        backgroundValue: "#000000",
-        accentColor: "#a855f7",
-        blurBackground: false,
-        showViews: true,
-        views: 0,
-      },
+    if (existingUser) {
+      if (existingUser.email === email) return { error: "Email already in use" };
+      if (existingUser.username === username) return { error: "Username already taken" };
+    }
+
+    // 2. Validate invite code
+    const invite = await prisma.invite.findUnique({
+      where: { code: inviteCode }
+    });
+
+    if (!invite || invite.used || (invite.expiresAt && invite.expiresAt < new Date())) {
+      return { error: "Invalid or expired invite code" };
+    }
+
+    // 3. Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 4. Create User & Profile in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          username,
+          passwordHash,
+          role: "member"
+        }
+      });
+
+      await tx.profile.create({
+        data: {
+          userId: user.id,
+          displayName: username,
+          bio: null,
+          avatarUrl: null,
+          bannerUrl: null,
+          backgroundType: "color",
+          backgroundValue: "#000000",
+          accentColor: "#a855f7",
+          blurBackground: false,
+          showViews: true,
+          views: 0,
+        }
+      });
+
+      // Mark invite as used
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: {
+          used: true,
+          usedBy: user.id
+        }
+      });
+
+      return user;
     });
 
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: "Failed to complete registration" };
+    console.error("Signup error:", error);
+    return { error: "Failed to create account. Please try again." };
   }
 }

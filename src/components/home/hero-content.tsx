@@ -47,7 +47,7 @@ export function HeroContent() {
                     className="flex flex-col sm:flex-row gap-6 mt-8"
                 >
                     <Link
-                        href="/dashboard"
+                        href="/signup"
                         className="group relative px-10 py-5 bg-purple-600 rounded-full text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_-12px_rgba(147,51,234,0.5)]"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:opacity-80 transition-opacity" />

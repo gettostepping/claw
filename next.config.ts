@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     // @ts-ignore
     proxyClientMaxBodySize: '120mb',
   },
+  devIndicators: false,
   turbopack: {
     root: process.cwd(),
   },

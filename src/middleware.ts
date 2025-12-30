@@ -7,21 +7,7 @@ export default withAuth(
     const path = req.nextUrl.pathname
     const isAuth = !!token
 
-    // 1. Enforce registration completion for authenticated users
-    // If user is logged in but has no username (incomplete registration)
-    if (isAuth && !token.username) {
-      // Allow access to register page, api routes, and static assets (handled by matcher mostly)
-      if (
-        !path.startsWith('/register') &&
-        !path.startsWith('/google-register') &&
-        !path.startsWith('/api') &&
-        !path.startsWith('/_next')
-      ) {
-        return NextResponse.redirect(new URL('/register', req.url))
-      }
-    }
-
-    // 2. Protect private routes for unauthenticated users
+    // Protect private routes for unauthenticated users
     if (!isAuth) {
       if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
         let from = path
