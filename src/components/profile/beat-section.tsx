@@ -230,7 +230,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                 </h3>
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
+            <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-current/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-current/20">
                 {beats.length === 0 && <div className="text-center text-gray-500 text-sm py-8">No beats uploaded yet</div>}
 
                 {beats.map((beat) => {
