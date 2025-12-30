@@ -137,6 +137,9 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
     updatedBackgroundValue = "";
   }
 
+  const backgroundEffect = formData.get("backgroundEffect") as string
+  const nameEffect = formData.get("nameEffect") as string
+
   try {
     await prisma.profile.update({
       where: { userId: session.user.id }, // session.user.id needs to be ensured in auth callback
@@ -153,6 +156,8 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         socialYoutube,
         socialInstagram,
         socialDiscord,
+        backgroundEffect,
+        nameEffect,
       },
     })
     revalidatePath("/dashboard")

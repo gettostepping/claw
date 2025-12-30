@@ -40,6 +40,8 @@ type ProfileType = {
   socialDiscord?: string | null;
   createdAt: Date;
   cardStyle?: string;
+  backgroundEffect?: string;
+  nameEffect?: string;
 };
 
 export function ProfileForm({ profile }: { profile: ProfileType }) {
@@ -162,6 +164,38 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
           <option value="neon">Neon (Glowing)</option>
           <option value="soft">Soft (Rounded)</option>
         </select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Background Effect</label>
+          <select
+            name="backgroundEffect"
+            defaultValue={profile.backgroundEffect || "none"}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-white focus:outline-none focus:border-neutral-600"
+          >
+            <option value="none">None</option>
+            <option value="snow">Snow</option>
+            <option value="rain">Rain</option>
+            <option value="stars">Stars</option>
+            <option value="fireflies">Fireflies</option>
+            <option value="cherry-blossoms">Cherry Blossoms</option>
+          </select>
+        </div>
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider">Name Effect</label>
+          <select
+            name="nameEffect"
+            defaultValue={profile.nameEffect || "none"}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-white focus:outline-none focus:border-neutral-600"
+          >
+            <option value="none">None</option>
+            <option value="purple-particles">Purple Particles</option>
+            <option value="golden-glow">Golden Glow</option>
+            <option value="rainbow">Rainbow</option>
+            <option value="glitch">Glitch</option>
+          </select>
+        </div>
       </div>
 
       <div className="space-y-3">

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ProfileCardWithMusic } from "@/components/profile/profile-card"
 import { ViewTracker } from "@/components/view-tracker"
 import { FooterLink } from "@/components/footer-link"
+import dynamic from "next/dynamic"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
@@ -89,18 +90,23 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const sanitizedProfile = {
     ...profile,
     createdAt: profile.createdAt.toISOString(),
-    links: profile.links.map((link: { id: string; title: string; url: string; icon?: string | null; order: number; createdAt: Date }) => ({
-      ...link,
-      createdAt: link.createdAt.toISOString()
+    links: profile.links.map((l: { id: string; title: string; url: string; order: number; icon?: string | null; createdAt: Date }) => ({
+      ...l,
+      icon: l.icon ?? null,
+      createdAt: l.createdAt.toISOString()
     })),
+    accentColor: profile.accentColor ?? "#a855f7",
+    backgroundEffect: profile.backgroundEffect ?? "none",
+    nameEffect: profile.nameEffect ?? "none",
   }
 
-  const tracks = profile.tracks.map((t: { id: string; title: string; artist?: string | null; coverUrl?: string | null; streamUrl: string }) => ({
+  const tracks = profile.tracks.map((t: { id: string; title: string; artist?: string | null; coverUrl?: string | null; streamUrl: string; duration?: number | null }) => ({
     id: t.id,
     title: t.title,
     artist: t.artist ?? null,
     coverUrl: t.coverUrl ?? null,
     streamUrl: t.streamUrl,
+    duration: t.duration ?? null,
   }))
 
   const session = await getServerSession(authOptions)
@@ -127,7 +133,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   } else if (profile.backgroundType === "video") {
     hasVideoBackground = true
   }
-
+  const SnowEffect = dynamic(() => import("@/components/effects/background-effects").then(mod => mod.SnowEffect))
+  const RainEffect = dynamic(() => import("@/components/effects/background-effects").then(mod => mod.RainEffect))
+  const StarFieldEffect = dynamic(() => import("@/components/effects/background-effects").then(mod => mod.StarFieldEffect))
+  const FirefliesEffect = dynamic(() => import("@/components/effects/background-effects").then(mod => mod.FirefliesEffect))
+  const CherryBlossomEffect = dynamic(() => import("@/components/effects/background-effects").then(mod => mod.CherryBlossomEffect))
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 relative`} style={backgroundStyle}>
       {hasVideoBackground && profile.backgroundValue && (
@@ -140,6 +150,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           src={profile.backgroundValue}
         />
       )}
+
+      {sanitizedProfile.backgroundEffect === "snow" && <SnowEffect />}
+      {sanitizedProfile.backgroundEffect === "rain" && <RainEffect />}
+      {sanitizedProfile.backgroundEffect === "stars" && <StarFieldEffect />}
+      {sanitizedProfile.backgroundEffect === "fireflies" && <FirefliesEffect />}
+      {sanitizedProfile.backgroundEffect === "cherry-blossoms" && <CherryBlossomEffect />}
       {/* Overlay for readability if needed */}
       <div className={`absolute inset-0 ${profile.blurBackground ? "backdrop-blur-sm" : ""} pointer-events-none`} />
 

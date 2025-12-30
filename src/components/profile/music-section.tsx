@@ -13,6 +13,7 @@ interface Track {
   artist: string | null
   coverUrl: string | null
   streamUrl: string
+  duration?: number | null
 }
 
 function UploadForm() {
@@ -91,6 +92,17 @@ function EditTrackModal({ track, isOpen, onClose, onSuccess }: EditTrackModalPro
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Duration (seconds)</label>
+            <input
+              name="duration"
+              type="number"
+              defaultValue={track.duration || ""}
+              placeholder="e.g. 180"
+              className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-white focus:outline-none focus:border-neutral-600"
+            />
+          </div>
+
           {state?.error && (
             <p className="text-red-500 text-sm">{state.error}</p>
           )}
@@ -125,7 +137,8 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const lastSrcRef = useRef<string | null>(null)
   const [uploadState, formAction] = useActionState(uploadTrack, null)
-  const loadedTracksRef = useRef<Map<string, string>>(new Map())
+  const loadedTracksRef = useRef<Map<string, { url: string, timestamp: number }>>(new Map())
+  const autoRefreshRef = useRef<Set<string>>(new Set())
 
   // Simple state for current track's time and duration (like the working Soundcloud implementation)
   const [currentTime, setCurrentTime] = useState(0)
@@ -177,11 +190,25 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       setIsPlaying(false)
       setCurrentTime(0)
     }
-    const handleError = (e: Event) => {
+    const handleError = async (e: Event) => {
       const audioEl = e.target as HTMLAudioElement
       const error = audioEl.error
       if (error) {
         console.error("Audio error code:", error.code, "src:", audioEl.src.substring(0, 50))
+
+        // Error code 4 (MEDIA_ERR_SRC_NOT_SUPPORTED) often means the Cobalt tunnel expired (400 Bad Request)
+        if (error.code === 4 && currentTrack && !autoRefreshRef.current.has(currentTrack)) {
+          console.log("Attempting auto-refresh for track:", currentTrack)
+          autoRefreshRef.current.add(currentTrack)
+
+          const fresh = await fetchFreshUrl(currentTrack)
+          if (fresh) {
+            loadedTracksRef.current.set(currentTrack, { url: fresh, timestamp: Date.now() })
+            setPlayingSrc(fresh)
+            setIsPlaying(true)
+            return
+          }
+        }
       }
       setIsPlaying(false)
     }
@@ -232,7 +259,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
 
     let src = playingSrc
     if (!src && loadedTracksRef.current.has(currentTrack)) {
-      src = loadedTracksRef.current.get(currentTrack)!
+      src = loadedTracksRef.current.get(currentTrack)!.url
     }
     if (!src) {
       src = activeTrack.streamUrl
@@ -329,13 +356,17 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       return
     }
 
+    // URL cache with 15-minute TTL (Cobalt tunnels usually last longer, but let's be safe)
+    const CACHE_TTL = 15 * 60 * 1000
     if (loadedTracksRef.current.has(trackId)) {
-      const cachedUrl = loadedTracksRef.current.get(trackId)!
-      setCurrentTrack(trackId)
-      setCurrentTime(0)
-      setPlayingSrc(cachedUrl)
-      setIsPlaying(true)
-      return
+      const cached = loadedTracksRef.current.get(trackId)!
+      if (Date.now() - cached.timestamp < CACHE_TTL) {
+        setCurrentTrack(trackId)
+        setCurrentTime(0)
+        setPlayingSrc(cached.url)
+        setIsPlaying(true)
+        return
+      }
     }
 
     const next = tracks.find(t => t.id === trackId)
@@ -345,6 +376,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     setCurrentTime(0)
     setDuration(0) // Reset duration when switching tracks
     setIsPlaying(false)
+    autoRefreshRef.current.delete(trackId) // Reset auto-refresh attempt for new play session
 
     if (audio && currentTrack && currentTrack !== trackId) {
       audio.pause()
@@ -356,11 +388,12 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     const fresh = await fetchFreshUrl(trackId)
 
     if (fresh) {
-      loadedTracksRef.current.set(trackId, fresh)
+      loadedTracksRef.current.set(trackId, { url: fresh, timestamp: Date.now() })
       setPlayingSrc(fresh)
       setIsPlaying(true)
     } else {
-      setPlayingSrc(null)
+      // If refresh fails, try using the original streamUrl as fallback
+      setPlayingSrc(next.streamUrl)
       setIsPlaying(true)
     }
   }
@@ -422,9 +455,10 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
           const isActive = currentTrack === track.id
           const showMenu = openMenuId === track.id
 
-          // For active track, use current state; for others, show 0
+          // For active track, use current duration state (which comes from the audio element)
+          // For others, use the stored duration from metadata
+          const trackDuration = isActive && duration > 0 ? duration : (track.duration || 0)
           const trackCurrentTime = isActive ? currentTime : 0
-          const trackDuration = isActive ? duration : 0
 
           const progressPercent = trackDuration > 0
             ? Math.min((trackCurrentTime / trackDuration) * 100, 100)

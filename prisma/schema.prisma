@@ -40,6 +40,8 @@ model Profile {
   bannerUrl       String?
   backgroundType  String // color | gradient | image | video
   backgroundValue String // hex | css gradient | image url | mp4
+  backgroundEffect String  @default("none")
+  nameEffect       String  @default("none")
   accentColor     String  @default("#a855f7")
   cardStyle       String  @default("standard")
   blurBackground  Boolean @default(false)
@@ -70,6 +72,7 @@ model Track {
   coverUrl  String?
   streamUrl String // Direct URL from Cobalt or processed
   sourceUrl String? // Original SoundCloud URL
+  duration  Int?    // Duration in seconds
   createdAt DateTime @default(now())
 
   profile Profile @relation(fields: [profileId], references: [id])

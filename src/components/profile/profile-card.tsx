@@ -8,6 +8,7 @@ import { MusicSection } from "./music-section"
 import { YouTubePlayer } from "./youtube-player"
 import { VideoPlayer } from "./video-player"
 import { Eye } from "lucide-react"
+import { PurpleParticlesEffect, GoldenGlowEffect, RainbowEffect, GlitchEffect } from "../effects/name-effects"
 
 function TenorAvatar({ url, mp4Url, isGif, username }: { url: string; mp4Url: string; isGif: boolean; username: string }) {
   const [useGif, setUseGif] = useState(false)
@@ -87,6 +88,8 @@ interface ProfileCardProps {
       thumbnailUrl: string | null
       description: string | null
     }[]
+    backgroundEffect?: string
+    nameEffect?: string
   }
   tracks: {
     id: string
@@ -233,16 +236,29 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
         </motion.div>
 
         <div>
-          <motion.h1
-            className="text-2xl font-bold"
+          <motion.div
+            className="relative inline-block"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.1, color: "#e5e5e5" }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
-            {profile.displayName}
-          </motion.h1>
-          <p className="opacity-60 text-sm">@{username}</p>
+            {profile.nameEffect === "purple-particles" && <PurpleParticlesEffect />}
+            {profile.nameEffect === "golden-glow" && <GoldenGlowEffect />}
+
+            <motion.h1
+              className="text-2xl font-bold relative z-10"
+              animate={{ opacity: 1 }}
+            >
+              {profile.nameEffect === "rainbow" ? (
+                <RainbowEffect>{profile.displayName}</RainbowEffect>
+              ) : profile.nameEffect === "glitch" ? (
+                <GlitchEffect>{profile.displayName}</GlitchEffect>
+              ) : (
+                profile.displayName
+              )}
+            </motion.h1>
+            <p className="opacity-60 text-sm">@{username}</p>
+          </motion.div>
         </div>
 
         {

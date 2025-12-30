@@ -17,13 +17,16 @@ export async function uploadTrack(prevState: unknown, formData: FormData) {
     const cobaltResponse = await processSoundCloudUrl(url)
 
     if (!cobaltResponse || cobaltResponse.status === 'error') {
+      console.error("Cobalt Error:", cobaltResponse?.error)
       return { error: "Failed to process URL" }
     }
+
+    console.log("Cobalt Success Response:", JSON.stringify(cobaltResponse, null, 2))
 
     // Determine the stream URL
     const streamUrl = cobaltResponse.url
     // If it's a redirect, we might want to follow it or just use it. Cobalt usually gives a direct link.
-    
+
     // Get the user's profile
     const profile = await prisma.profile.findUnique({
       where: { userId: session.user.id },
@@ -35,14 +38,15 @@ export async function uploadTrack(prevState: unknown, formData: FormData) {
 
     // Create the track
     try {
-      await prisma.track.create({
+      await (prisma.track.create as any)({
         data: {
           profileId: profile.id,
           title: cobaltResponse.title || cobaltResponse.filename || "Untitled Track",
           artist: cobaltResponse.artist || cobaltResponse.author || "Unknown Artist",
-          coverUrl: cobaltResponse.thumbnail || cobaltResponse.cover || cobaltResponse.picture,
+          coverUrl: cobaltResponse.artwork || cobaltResponse.picture || cobaltResponse.thumbnail || cobaltResponse.cover,
           streamUrl: streamUrl,
           sourceUrl: url,
+          duration: cobaltResponse.duration ? Math.floor(cobaltResponse.duration) : null,
         }
       })
     } catch (e: unknown) {
@@ -92,11 +96,14 @@ export async function updateTrack(prevState: unknown, formData: FormData) {
       return { error: "Unauthorized" }
     }
 
+    const duration = formData.get("duration") ? parseInt(formData.get("duration") as string) : null
+
     await prisma.track.update({
       where: { id: trackId },
       data: {
         title,
         coverUrl: coverUrl || null,
+        duration,
       }
     })
 

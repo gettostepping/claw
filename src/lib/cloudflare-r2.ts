@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 
 // Create S3 client configured for Cloudflare R2
 const r2Client = new S3Client({
@@ -11,13 +11,40 @@ const r2Client = new S3Client({
   forcePathStyle: true, // Required for Cloudflare R2
 });
 
+async function getUniqueKey(prefix: string, fileName: string): Promise<string> {
+  const dotIndex = fileName.lastIndexOf('.');
+  const name = dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName;
+  const ext = dotIndex !== -1 ? fileName.substring(dotIndex) : '';
+
+  let key = `${prefix}/${fileName}`;
+  let count = 0;
+
+  while (true) {
+    try {
+      await r2Client.send(new HeadObjectCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+        Key: key,
+      }));
+      // If no error, file exists
+      count++;
+      key = `${prefix}/${name}_${count}${ext}`;
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        // File does not exist, safe to use this key
+        return key;
+      }
+      throw error; // Other error
+    }
+  }
+}
+
 export async function uploadVideoToR2(
   fileBuffer: Buffer,
   fileName: string,
   mimeType: string
 ): Promise<string> {
-  const key = `videos/${Date.now()}-${fileName}`;
-  
+  const key = await getUniqueKey('videos', fileName);
+
   const command = new PutObjectCommand({
     Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
     Key: key,
@@ -29,7 +56,7 @@ export async function uploadVideoToR2(
   });
 
   await r2Client.send(command);
-  
+
   // Return the public URL
   const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
   return publicUrl;
@@ -49,8 +76,8 @@ export async function uploadImageToR2(
   fileName: string,
   mimeType: string
 ): Promise<string> {
-  const key = `images/${Date.now()}-${fileName}`;
-  
+  const key = await getUniqueKey('images', fileName);
+
   const command = new PutObjectCommand({
     Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
     Key: key,
@@ -62,7 +89,7 @@ export async function uploadImageToR2(
   });
 
   await r2Client.send(command);
-  
+
   // Return the public URL
   const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
   return publicUrl;

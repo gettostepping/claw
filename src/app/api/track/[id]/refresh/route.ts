@@ -9,7 +9,7 @@ export async function GET(_: NextRequest, ctx: { params: Promise<{ id: string }>
     const { id } = await ctx.params
     const track = await prisma.track.findUnique({
       where: { id },
-      select: { id: true, streamUrl: true, sourceUrl: true },
+      select: { id: true, streamUrl: true, sourceUrl: true, duration: true },
     })
 
     if (!track) {
@@ -25,6 +25,16 @@ export async function GET(_: NextRequest, ctx: { params: Promise<{ id: string }>
     if (!cobalt || cobalt.status === "error") {
       // Fallback gracefully
       return NextResponse.json({ url: track.streamUrl, stale: true }, { status: 200 })
+    }
+
+    // Optimization: Save fresh metadata if missing or changed
+    if (cobalt.duration && (!track.duration || Math.floor(cobalt.duration) !== track.duration)) {
+      await (prisma.track.update as any)({
+        where: { id: track.id },
+        data: {
+          duration: Math.floor(cobalt.duration)
+        }
+      })
     }
 
     return NextResponse.json({ url: cobalt.url }, { status: 200 })
