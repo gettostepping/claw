@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react"
 import { Play, Pause, Music, Volume2, MoreVertical, Edit, Trash2, X } from "lucide-react"
 import { deleteBeat } from "@/actions/beats"
+import { updateBeatOrder } from "@/actions/reorder"
 import { useRouter } from "next/navigation"
+import { Reorder, useDragControls } from "framer-motion"
 
 import { useActionState } from "react"
 import { updateBeat } from "@/actions/beats"
@@ -118,7 +120,28 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
     const [editingBeat, setEditingBeat] = useState<Beat | null>(null)
     const [playbackError, setPlaybackError] = useState<string | null>(null)
 
-    const activeBeat = beats.find(b => b.id === currentBeatId)
+    // Reordering State
+    const [items, setItems] = useState(beats)
+
+    // Sync items when beats prop changes
+    useEffect(() => {
+        setItems(beats)
+    }, [beats])
+
+    const handleDragEnd = async () => {
+        const currentIds = items.map(t => t.id).join(',')
+        const propIds = beats.map(t => t.id).join(',')
+
+        if (currentIds !== propIds && items.length > 0) {
+            const updates = items.map((beat, index) => ({
+                id: beat.id,
+                order: index
+            }))
+            await updateBeatOrder(updates)
+        }
+    }
+
+    const activeBeat = items.find(b => b.id === currentBeatId)
 
     const formatTime = (s: number) => {
         if (!isFinite(s) || isNaN(s)) return "0:00"
@@ -198,7 +221,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
         const audio = audioRef.current
         if (!audio) return
 
-        setPlaybackError(null) // Reset error on any interaction
+        setPlaybackError(null)
 
         if (currentBeatId === beatId) {
             if (isPlaying) {
@@ -210,12 +233,12 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                 })
             }
         } else {
-            const beat = beats.find(b => b.id === beatId)
+            const beat = items.find(b => b.id === beatId)
             if (beat) {
                 setCurrentBeatId(beatId)
-                setDuration(0) // Reset duration for new beat
+                setDuration(0)
                 audio.src = beat.url
-                audio.load() // Explicitly load
+                audio.load()
                 audio.play().catch((err) => {
                     console.error("Load/Play error:", err)
                     setPlaybackError("Failed to load this beat.")
@@ -225,7 +248,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
         }
     }
 
-    const handleSeek = (beatId: string, ratio: number) => {
+    const handleSeekFunc = (beatId: string, ratio: number) => {
         const audio = audioRef.current
         if (!audio || currentBeatId !== beatId) return
 
@@ -237,7 +260,7 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
         }
     }
 
-    const handleDelete = async (beatId: string) => {
+    const handleDeleteFunc = async (beatId: string) => {
         if (!confirm("Are you sure you want to delete this beat?")) return
         const result = await deleteBeat(beatId)
         if (result?.success) {
@@ -266,134 +289,62 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
             )}
 
             <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-current/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-current/20">
-                {beats.length === 0 && <div className="text-center opacity-50 text-sm py-8">No beats uploaded yet</div>}
+                {items.length === 0 && <div className="text-center opacity-50 text-sm py-8">No beats uploaded yet</div>}
 
-                {beats.map((beat) => {
-                    const isActive = currentBeatId === beat.id
-                    const showMenu = openMenuId === beat.id
-                    const trackDuration = isActive && duration > 0 ? duration : (beat.duration || 0)
-                    const trackCurrentTime = isActive ? currentTime : 0
-                    const progressPercent = trackDuration > 0 ? (trackCurrentTime / trackDuration) * 100 : 0
-
-                    return (
-                        <div
-                            key={beat.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-current/10' : 'hover:bg-current/5'}`}
-                        >
-                            <div className="relative w-12 h-12 rounded overflow-hidden bg-neutral-800 flex-shrink-0 group">
-                                {beat.coverUrl ? (
-                                    <img src={beat.coverUrl} alt={beat.title} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center opacity-50">
-                                        <Music size={20} />
-                                    </div>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => handlePlayToggle(beat.id)}
-                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    {isActive && isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                                </button>
-                            </div>
-
-                            <div className="flex-1 min-w-0 text-left">
-                                <h4 className={`font-medium text-sm truncate ${isActive ? 'opacity-100' : 'opacity-70'}`}>
-                                    {beat.title}
-                                </h4>
-                                {beat.artist && (
-                                    <p className="text-[10px] opacity-70 font-mono uppercase tracking-tighter truncate">
-                                        {beat.artist}
-                                    </p>
-                                )}
-                                <div className="mt-1 flex items-center gap-3">
-                                    <div
-                                        className="flex-1 h-1.5 rounded bg-current/10 overflow-hidden cursor-pointer relative"
-                                        onClick={(e) => {
-                                            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-                                            const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
-                                            handleSeek(beat.id, ratio)
-                                        }}
-                                    >
-                                        <div
-                                            className="h-full bg-current/60 transition-all"
-                                            style={{ width: `${progressPercent}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-1 text-[10px] opacity-50 whitespace-nowrap">
-                                        <span>{formatTime(trackCurrentTime)}</span>
-                                        <span>/</span>
-                                        <span>{formatTime(trackDuration)}</span>
-                                    </div>
-
-                                    <div className="flex items-center gap-1">
-                                        <Volume2 size={14} className="opacity-50" />
-                                        <input
-                                            type="range"
-                                            min={0}
-                                            max={1}
-                                            step={0.01}
-                                            value={volume}
-                                            onChange={(e) => setVolume(parseFloat(e.target.value))}
-                                            className="w-16 h-1.5 cursor-pointer"
-                                            style={{ accentColor: accentColor }}
-                                            aria-label="Volume"
-                                        />
-                                    </div>
-
-                                    {isOwner && (
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setOpenMenuId(showMenu ? null : beat.id)
-                                                }}
-                                                className="p-1 opacity-50 hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreVertical size={16} />
-                                            </button>
-                                            {showMenu && (
-                                                <div
-                                                    className="absolute right-0 top-8 bg-neutral-800 rounded border border-neutral-700 shadow-lg z-10 min-w-[120px]"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            setEditingBeat(beat)
-                                                            setOpenMenuId(null)
-                                                        }}
-                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2"
-                                                    >
-                                                        <Edit size={14} />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleDelete(beat.id)
-                                                            setOpenMenuId(null)
-                                                        }}
-                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2 text-red-400"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )
-                })}
+                {isOwner ? (
+                    <Reorder.Group axis="y" values={items} onReorder={setItems} className="space-y-3">
+                        {items.map((beat) => (
+                            <Reorder.Item key={beat.id} value={beat} id={beat.id} onDragEnd={handleDragEnd}>
+                                <BeatItem
+                                    beat={beat}
+                                    isOwner={isOwner}
+                                    accentColor={accentColor}
+                                    currentBeatId={currentBeatId}
+                                    isPlaying={isPlaying}
+                                    duration={duration}
+                                    currentTime={currentTime}
+                                    handlePlayToggle={handlePlayToggle}
+                                    handleSeek={handleSeekFunc}
+                                    handleDelete={handleDeleteFunc}
+                                    openMenuId={openMenuId}
+                                    setOpenMenuId={setOpenMenuId}
+                                    setEditingBeat={setEditingBeat}
+                                    formatTime={formatTime}
+                                    volume={volume}
+                                    setVolume={setVolume}
+                                />
+                            </Reorder.Item>
+                        ))}
+                    </Reorder.Group>
+                ) : (
+                    <div className="space-y-3">
+                        {items.map((beat) => (
+                            <BeatItem
+                                key={beat.id}
+                                beat={beat}
+                                isOwner={isOwner}
+                                accentColor={accentColor}
+                                currentBeatId={currentBeatId}
+                                isPlaying={isPlaying}
+                                duration={duration}
+                                currentTime={currentTime}
+                                handlePlayToggle={handlePlayToggle}
+                                handleSeek={handleSeekFunc}
+                                handleDelete={handleDeleteFunc}
+                                openMenuId={openMenuId}
+                                setOpenMenuId={setOpenMenuId}
+                                setEditingBeat={setEditingBeat}
+                                formatTime={formatTime}
+                                volume={volume}
+                                setVolume={setVolume}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             <audio ref={audioRef} style={{ display: 'none' }} />
 
-            {/* Edit Modal */}
             {editingBeat && (
                 <EditBeatModal
                     beat={editingBeat}
@@ -402,6 +353,129 @@ export function BeatSection({ beats, isOwner, accentColor = "#a855f7" }: { beats
                     onSuccess={() => router.refresh()}
                 />
             )}
+        </div>
+    )
+}
+
+function BeatItem({ beat, isOwner, accentColor, currentBeatId, isPlaying, duration, currentTime, handlePlayToggle, handleSeek, handleDelete, openMenuId, setOpenMenuId, setEditingBeat, formatTime, volume, setVolume }: any) {
+    const isActive = currentBeatId === beat.id
+    const showMenu = openMenuId === beat.id
+    const trackDuration = isActive && duration > 0 ? duration : (beat.duration || 0)
+    const trackCurrentTime = isActive ? currentTime : 0
+    const progressPercent = trackDuration > 0 ? (trackCurrentTime / trackDuration) * 100 : 0
+
+    return (
+        <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-current/10' : 'hover:bg-current/5'} ${isOwner ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+            <div className="relative w-12 h-12 rounded overflow-hidden bg-neutral-800 flex-shrink-0 group">
+                {beat.coverUrl ? (
+                    <img src={beat.coverUrl} alt={beat.title} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center opacity-50">
+                        <Music size={20} />
+                    </div>
+                )}
+                <button
+                    type="button"
+                    onClick={() => handlePlayToggle(beat.id)}
+                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    {isActive && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                </button>
+            </div>
+
+            <div className="flex-1 min-w-0 text-left">
+                <h4 className={`font-medium text-sm truncate ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                    {beat.title}
+                </h4>
+                {beat.artist && (
+                    <p className="text-[10px] opacity-70 font-mono uppercase tracking-tighter truncate">
+                        {beat.artist}
+                    </p>
+                )}
+                <div className="mt-1 flex items-center gap-3">
+                    <div
+                        className="flex-1 h-1.5 rounded bg-current/10 overflow-hidden cursor-pointer relative"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                            const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
+                            handleSeek(beat.id, ratio)
+                        }}
+                    >
+                        <div
+                            className="h-full bg-current/60 transition-all"
+                            style={{ width: `${progressPercent}%` }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] opacity-50 whitespace-nowrap">
+                        <span>{formatTime(trackCurrentTime)}</span>
+                        <span>/</span>
+                        <span>{formatTime(trackDuration)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <Volume2 size={14} className="opacity-50" />
+                        <input
+                            type="range"
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={volume}
+                            onChange={(e: any) => setVolume(parseFloat(e.target.value))}
+                            className="w-16 h-1.5 cursor-pointer"
+                            style={{ accentColor: accentColor }}
+                            aria-label="Volume"
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    {isOwner && (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenMenuId(showMenu ? null : beat.id)
+                                }}
+                                className="p-1 opacity-50 hover:opacity-100 transition-opacity"
+                                onPointerDown={(e) => e.stopPropagation()}
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                            {showMenu && (
+                                <div
+                                    className="absolute right-0 top-8 bg-neutral-800 rounded border border-neutral-700 shadow-lg z-10 min-w-[120px]"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingBeat(beat)
+                                            setOpenMenuId(null)
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2"
+                                    >
+                                        <Edit size={14} />
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleDelete(beat.id)
+                                            setOpenMenuId(null)
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2 text-red-400"
+                                    >
+                                        <Trash2 size={14} />
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

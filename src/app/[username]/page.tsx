@@ -70,9 +70,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
         include: {
           links: { orderBy: { order: "asc" } },
           musicEmbeds: true,
-          tracks: { orderBy: { createdAt: "desc" } },
+          tracks: { orderBy: [{ order: "asc" }, { createdAt: "desc" }] },
           videos: true,
-          beats: { orderBy: { createdAt: "desc" } },
+          beats: { orderBy: [{ order: "asc" }, { createdAt: "desc" }] },
         }
       }
     },

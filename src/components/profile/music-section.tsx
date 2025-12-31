@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Upload, Play, Pause, Music, Volume2, MoreVertical, Edit, Trash2, X } from "lucide-react"
 import { uploadTrack, updateTrack, deleteTrack } from "@/actions/music"
+import { updateTrackOrder } from "@/actions/reorder"
 import { useFormStatus } from "react-dom"
 import { useActionState } from "react"
 import { useRouter } from "next/navigation"
+import { Reorder, useDragControls } from "framer-motion"
 
 interface Track {
   id: string
@@ -140,7 +142,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
   const loadedTracksRef = useRef<Map<string, { url: string, timestamp: number }>>(new Map())
   const autoRefreshRef = useRef<Set<string>>(new Set())
 
-  // Simple state for current track's time and duration (like the working Soundcloud implementation)
+  // Simple state for current track's time and duration
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
 
@@ -148,7 +150,28 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [editingTrack, setEditingTrack] = useState<Track | null>(null)
 
-  const activeTrack = useMemo(() => tracks.find(t => t.id === currentTrack), [tracks, currentTrack])
+  // Reordering State
+  const [items, setItems] = useState(tracks)
+
+  // Sync items when tracks prop changes
+  useEffect(() => {
+    setItems(tracks)
+  }, [tracks])
+
+  const handleDragEnd = async () => {
+    const currentIds = items.map(t => t.id).join(',')
+    const propIds = tracks.map(t => t.id).join(',')
+
+    if (currentIds !== propIds && items.length > 0) {
+      const updates = items.map((track, index) => ({
+        id: track.id,
+        order: index
+      }))
+      await updateTrackOrder(updates)
+    }
+  }
+
+  const activeTrack = useMemo(() => items.find(t => t.id === currentTrack), [items, currentTrack])
 
   const formatTime = (s: number) => {
     if (!isFinite(s) || isNaN(s)) return "0:00"
@@ -161,7 +184,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     return title.replace(/\.(mp3|wav|ogg|flac|m4a|opus)$/i, "")
   }
 
-  // Setup audio element listeners - keep them always attached (like working Soundcloud implementation)
+  // Setup audio element listeners
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -195,8 +218,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       const error = audioEl.error
       if (error) {
         console.error("Audio error code:", error.code, "src:", audioEl.src.substring(0, 50))
-
-        // Error code 4 (MEDIA_ERR_SRC_NOT_SUPPORTED) often means the Cobalt tunnel expired (400 Bad Request)
         if (error.code === 4 && currentTrack && !autoRefreshRef.current.has(currentTrack)) {
           console.log("Attempting auto-refresh for track:", currentTrack)
           autoRefreshRef.current.add(currentTrack)
@@ -213,7 +234,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       setIsPlaying(false)
     }
 
-    // Add event listeners
     audio.addEventListener('timeupdate', updateTime)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('durationchange', updateDuration)
@@ -222,7 +242,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
 
-    // Set volume
     audio.volume = volume
 
     return () => {
@@ -234,7 +253,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
     }
-  }, [volume]) // Don't include currentTrack - listeners should stay attached
+  }, [volume, currentTrack]) // Added currentTrack dependency to refresh listeners if needed, though mostly stable
 
   useEffect(() => {
     const audio = audioRef.current
@@ -242,7 +261,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     audio.volume = volume
   }, [volume])
 
-  // Update audio source when track or playingSrc changes
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -285,12 +303,9 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       lastSrcRef.current = src
       audio.src = src
       audio.load()
-
-      // Duration will be set by the audio event listeners
     }
   }, [currentTrack, activeTrack, playingSrc])
 
-  // Play audio when isPlaying becomes true
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !isPlaying || !currentTrack) return
@@ -334,7 +349,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     }
   }
 
-  const handlePlay = async (trackId: string) => {
+  const handlePlayFunc = async (trackId: string) => {
     const audio = audioRef.current
 
     if (currentTrack === trackId && isPlaying) {
@@ -356,7 +371,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       return
     }
 
-    // URL cache with 15-minute TTL (Cobalt tunnels usually last longer, but let's be safe)
     const CACHE_TTL = 15 * 60 * 1000
     if (loadedTracksRef.current.has(trackId)) {
       const cached = loadedTracksRef.current.get(trackId)!
@@ -369,14 +383,14 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       }
     }
 
-    const next = tracks.find(t => t.id === trackId)
+    const next = items.find(t => t.id === trackId)
     if (!next) return
 
     setCurrentTrack(trackId)
     setCurrentTime(0)
-    setDuration(0) // Reset duration when switching tracks
+    setDuration(0)
     setIsPlaying(false)
-    autoRefreshRef.current.delete(trackId) // Reset auto-refresh attempt for new play session
+    autoRefreshRef.current.delete(trackId)
 
     if (audio && currentTrack && currentTrack !== trackId) {
       audio.pause()
@@ -392,13 +406,12 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       setPlayingSrc(fresh)
       setIsPlaying(true)
     } else {
-      // If refresh fails, try using the original streamUrl as fallback
       setPlayingSrc(next.streamUrl)
       setIsPlaying(true)
     }
   }
 
-  const handleSeek = (trackId: string, ratio: number) => {
+  const handleSeekFunc = (trackId: string, ratio: number) => {
     const audio = audioRef.current
     if (!audio || currentTrack !== trackId) return
 
@@ -410,7 +423,7 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
     }
   }
 
-  const handleDelete = async (trackId: string) => {
+  const handleDeleteFunc = async (trackId: string) => {
     if (!confirm("Are you sure you want to delete this track?")) return
 
     const result = await deleteTrack(trackId)
@@ -434,8 +447,6 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-
-
       <div className="mb-4 flex items-center justify-between flex-shrink-0">
         <h3 className="font-bold text-lg flex items-center gap-2">
           <Music size={20} style={{ color: accentColor }} />
@@ -444,142 +455,68 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       </div>
 
       <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-current/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-current/20">
-        {tracks.length === 0 && <div className="text-center opacity-50 text-sm">No tracks yet</div>}
+        {items.length === 0 && <div className="text-center opacity-50 text-sm">No tracks yet</div>}
 
-        {tracks.map((track) => {
-          const isActive = currentTrack === track.id
-          const showMenu = openMenuId === track.id
-
-          // For active track, use current duration state (which comes from the audio element)
-          // For others, use the stored duration from metadata
-          const trackDuration = isActive && duration > 0 ? duration : (track.duration || 0)
-          const trackCurrentTime = isActive ? currentTime : 0
-
-          const progressPercent = trackDuration > 0
-            ? Math.min((trackCurrentTime / trackDuration) * 100, 100)
-            : 0
-
-          return (
-            <div
-              key={track.id}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-current/10' : 'hover:bg-current/5'}`}
-            >
-              <div className="relative w-12 h-12 rounded overflow-hidden bg-neutral-800 flex-shrink-0 group">
-                {track.coverUrl ? (
-                  <img src={track.coverUrl} alt={track.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center opacity-50">
-                    <Music size={20} />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handlePlay(track.id)}
-                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  {isActive && isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                </button>
-              </div>
-
-              <div className="flex-1 min-w-0 text-left">
-                <h4 className={`font-medium text-sm truncate ${isActive ? 'opacity-100' : 'opacity-70'}`}>
-                  {cleanTitle(track.title)}
-                </h4>
-                <div className="mt-1 flex items-center gap-3">
-                  <div
-                    className="flex-1 h-1.5 rounded bg-current/10 overflow-hidden cursor-pointer relative"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-                      const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
-                      handleSeek(track.id, ratio)
-                    }}
-                  >
-                    <div
-                      className="h-full bg-current/60 transition-all"
-                      style={{
-                        width: `${progressPercent}%`,
-                        minWidth: progressPercent > 0 ? "2px" : "0px"
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] opacity-50 whitespace-nowrap">
-                    <span>{formatTime(trackCurrentTime)}</span>
-                    <span>/</span>
-                    <span>{formatTime(trackDuration)}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Volume2 size={14} className="opacity-50" />
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={volume}
-                      onChange={(e) => setVolume(parseFloat(e.target.value))}
-                      className="w-16 h-1.5"
-                      style={{ accentColor: accentColor }}
-                      aria-label="Volume"
-                    />
-                  </div>
-                  {isOwner && (
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenMenuId(showMenu ? null : track.id)
-                        }}
-                        className="p-1 opacity-50 hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {showMenu && (
-                        <div
-                          className="absolute right-0 top-8 bg-neutral-800 rounded border border-neutral-700 shadow-lg z-10 min-w-[120px]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditingTrack(track)
-                              setOpenMenuId(null)
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2"
-                          >
-                            <Edit size={14} />
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(track.id)
-                              setOpenMenuId(null)
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2 text-red-400"
-                          >
-                            <Trash2 size={14} />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {isOwner ? (
+          <Reorder.Group axis="y" values={items} onReorder={setItems} className="space-y-3">
+            {items.map((track) => (
+              <Reorder.Item key={track.id} value={track} id={track.id} onDragEnd={handleDragEnd}>
+                <TrackItem
+                  track={track}
+                  isOwner={isOwner}
+                  accentColor={accentColor}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  duration={duration}
+                  currentTime={currentTime}
+                  handlePlay={handlePlayFunc}
+                  handleSeek={handleSeekFunc}
+                  handleDelete={handleDeleteFunc}
+                  openMenuId={openMenuId}
+                  setOpenMenuId={setOpenMenuId}
+                  setEditingTrack={setEditingTrack}
+                  formatTime={formatTime}
+                  cleanTitle={cleanTitle}
+                  volume={volume}
+                  setVolume={setVolume}
+                />
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
+        ) : (
+          <div className="space-y-3">
+            {items.map((track) => (
+              <TrackItem
+                key={track.id}
+                track={track}
+                isOwner={isOwner}
+                accentColor={accentColor}
+                currentTrack={currentTrack}
+                isPlaying={isPlaying}
+                duration={duration}
+                currentTime={currentTime}
+                handlePlay={handlePlayFunc}
+                handleSeek={handleSeekFunc}
+                handleDelete={handleDeleteFunc}
+                openMenuId={openMenuId}
+                setOpenMenuId={setOpenMenuId}
+                setEditingTrack={setEditingTrack}
+                formatTime={formatTime}
+                cleanTitle={cleanTitle}
+                volume={volume}
+                setVolume={setVolume}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Hidden Audio Player */}
       <audio
         ref={audioRef}
         preload="metadata"
         style={{ display: 'none' }}
       />
 
-      {/* Edit Modal */}
       {editingTrack && (
         <EditTrackModal
           track={editingTrack}
@@ -590,4 +527,127 @@ export function MusicSection({ tracks, isOwner, accentColor = "#a855f7" }: { tra
       )}
     </div>
   )
+}
+
+function TrackItem({ track, isOwner, accentColor, currentTrack, isPlaying, duration, currentTime, handlePlay, handleSeek, handleDelete, openMenuId, setOpenMenuId, setEditingTrack, formatTime, cleanTitle, volume, setVolume }: any) {
+  const isActive = currentTrack === track.id
+  const showMenu = openMenuId === track.id
+  const trackDuration = isActive && duration > 0 ? duration : (track.duration || 0)
+  const trackCurrentTime = isActive ? currentTime : 0
+  const progressPercent = trackDuration > 0
+    ? Math.min((trackCurrentTime / trackDuration) * 100, 100)
+    : 0
+
+  const content = (
+    <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-current/10' : 'hover:bg-current/5'} ${isOwner ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+      <div className="relative w-12 h-12 rounded overflow-hidden bg-neutral-800 flex-shrink-0 group">
+        {track.coverUrl ? (
+          <img src={track.coverUrl} alt={track.title} className="w-full h-full object-cover select-none" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center opacity-50">
+            <Music size={20} />
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => handlePlay(track.id)}
+          className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {isActive && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+        </button>
+      </div>
+
+      <div className="flex-1 min-w-0 text-left">
+        <h4 className={`font-medium text-sm truncate ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+          {cleanTitle(track.title)}
+        </h4>
+        <div className="mt-1 flex items-center gap-3">
+          <div
+            className="flex-1 h-1.5 rounded bg-current/10 overflow-hidden cursor-pointer relative"
+            onClick={(e) => {
+              e.stopPropagation()
+              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+              const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
+              handleSeek(track.id, ratio)
+            }}
+          >
+            <div
+              className="h-full bg-current/60 transition-all"
+              style={{
+                width: `${progressPercent}%`,
+                minWidth: progressPercent > 0 ? "2px" : "0px"
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-1 text-[10px] opacity-50 whitespace-nowrap">
+            <span>{formatTime(trackCurrentTime)}</span>
+            <span>/</span>
+            <span>{formatTime(trackDuration)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Volume2 size={14} className="opacity-50" />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e: any) => setVolume(parseFloat(e.target.value))}
+              className="w-16 h-1.5"
+              style={{ accentColor: accentColor }}
+              aria-label="Volume"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          {isOwner && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setOpenMenuId(showMenu ? null : track.id)
+                }}
+                className="p-1 opacity-50 hover:opacity-100 transition-opacity"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <MoreVertical size={16} />
+              </button>
+              {showMenu && (
+                <div
+                  className="absolute right-0 top-8 bg-neutral-800 rounded border border-neutral-700 shadow-lg z-10 min-w-[120px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingTrack(track)
+                      setOpenMenuId(null)
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2"
+                  >
+                    <Edit size={14} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(track.id)
+                      setOpenMenuId(null)
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-700 flex items-center gap-2 text-red-400"
+                  >
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
+  return content
 }

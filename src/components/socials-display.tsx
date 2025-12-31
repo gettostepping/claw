@@ -1,6 +1,8 @@
 "use client"
 
-import { Instagram, Youtube, CloudLightning, Disc, Copy, Check, Music } from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faSoundcloud, faYoutube, faInstagram, faSpotify, faDiscord } from "@fortawesome/free-brands-svg-icons"
+import { faCheck } from "@fortawesome/free-solid-svg-icons"
 import { useState } from "react"
 import { motion } from "framer-motion"
 
@@ -37,7 +39,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discor
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
         >
-          <CloudLightning size={20} />
+          <FontAwesomeIcon icon={faSoundcloud} className="w-5 h-5" />
         </motion.a>
       )}
 
@@ -51,7 +53,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discor
           whileHover={{ scale: 1.2, rotate: -5 }}
           whileTap={{ scale: 0.9 }}
         >
-          <Youtube size={20} />
+          <FontAwesomeIcon icon={faYoutube} className="w-5 h-5" />
         </motion.a>
       )}
 
@@ -65,7 +67,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discor
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
         >
-          <Instagram size={20} />
+          <FontAwesomeIcon icon={faInstagram} className="w-5 h-5" />
         </motion.a>
       )}
 
@@ -79,7 +81,7 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discor
           whileHover={{ scale: 1.2, rotate: -5 }}
           whileTap={{ scale: 0.9 }}
         >
-          <Music size={20} />
+          <FontAwesomeIcon icon={faSpotify} className="w-5 h-5" />
         </motion.a>
       )}
 
@@ -91,7 +93,11 @@ export function SocialsDisplay({ soundcloud, youtube, instagram, spotify, discor
           whileHover={{ scale: 1.2, rotate: -5 }}
           whileTap={{ scale: 0.9 }}
         >
-          {copied ? <Check size={20} /> : <Disc size={20} />}
+          {copied ? (
+            <FontAwesomeIcon icon={faCheck} className="w-5 h-5" />
+          ) : (
+            <FontAwesomeIcon icon={faDiscord} className="w-5 h-5" />
+          )}
         </motion.button>
       )}
     </div>
