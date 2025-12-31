@@ -172,6 +172,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
       <ViewTracker profileId={profile.id} shouldTrack={shouldTrack} />
 
+      {sanitizedProfile.bannerUrl && (
+        <div className="w-full max-w-4xl h-48 md:h-64 rounded-xl overflow-hidden mb-8 shadow-2xl relative z-10 shrink-0 border border-white/10">
+          <img
+            src={sanitizedProfile.bannerUrl}
+            alt="Profile Banner"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       <ProfileCardWithMusic
         username={username}
         profile={sanitizedProfile}

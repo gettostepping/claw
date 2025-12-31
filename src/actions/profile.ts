@@ -173,6 +173,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         nameEffect,
         featuredContent: formData.get("featuredContent") as string || "video",
         textTheme: formData.get("textTheme") as string || "white",
+        layoutConfig: formData.get("layoutConfig") as string || "{}",
       },
     })
     revalidatePath("/dashboard")

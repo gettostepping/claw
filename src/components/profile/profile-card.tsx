@@ -94,6 +94,7 @@ interface ProfileCardProps {
     backgroundEffect?: string
     nameEffect?: string
     featuredContent?: string
+    layoutConfig?: string
   }
   tracks: {
     id: string
@@ -270,8 +271,24 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
   )
 }
 
+
+interface LayoutItemConfig {
+  position: 'top' | 'bottom' | 'left' | 'right'
+  variant: 'full' | 'short'
+}
+
+interface LayoutConfig {
+  tracks: LayoutItemConfig
+  media: LayoutItemConfig
+  combined?: boolean
+}
+
+const DEFAULT_LAYOUT: LayoutConfig = {
+  tracks: { position: 'left', variant: 'short' },
+  media: { position: 'right', variant: 'short' }
+}
+
 export function ProfileCardWithMusic({ username, profile, tracks, beats, isOwner, accessToken }: ProfileCardProps) {
-  const video = profile.videos[0] // Get the first video (or latest uploaded)
   const accentColor = profile.accentColor || "#a855f7"
   const cardStyle = profile.cardStyle || "standard"
   const styles = getCardStyles(cardStyle, accentColor, (profile as any).textTheme || "white", (profile as any).cardColorMode || "dark")
@@ -284,33 +301,165 @@ export function ProfileCardWithMusic({ username, profile, tracks, beats, isOwner
     borderWidth: isBrutal ? '4px' : isNeon ? '2px' : undefined
   }
 
-  // Show beats if chosen, or if video is chosen but none exists and beats DO exist
+  // Parse Config
+  let config: LayoutConfig = DEFAULT_LAYOUT
+  try {
+    if (profile.layoutConfig) {
+      config = JSON.parse(profile.layoutConfig)
+    }
+  } catch (e) {
+    console.error("Failed to parse layout config", e)
+  }
+
+  // Ensure config has valid structure just in case partials are saved
+  if (!config.tracks) config.tracks = DEFAULT_LAYOUT.tracks
+  if (!config.media) config.media = DEFAULT_LAYOUT.media
+
+  // Define Content Renderers
+  const renderTracks = (variant: 'full' | 'short') => (
+    <div className={`flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow} transition-all`}
+      style={{
+        ...containerStyle,
+        width: '100%', // Allow container to control width
+      }}>
+      <MusicSection tracks={tracks} isOwner={isOwner} accentColor={accentColor} />
+    </div>
+  )
+
   const showBeats = profile.featuredContent === "beats" ||
     (profile.featuredContent === "video" && profile.videos.length === 0 && beats.length > 0)
 
-  return (
-    <div className="relative z-10 w-full max-w-[95vw] flex flex-col md:flex-row gap-6 items-center justify-center mx-auto p-4">
-      {/* Left: Music Section - Outside main box */}
-      <div className={`w-full md:w-96 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
-        <MusicSection tracks={tracks} isOwner={isOwner} accentColor={accentColor} />
-      </div>
-
-      {/* Main Profile Card Box */}
-      <ProfileCard username={username} profile={profile} tracks={tracks} isOwner={isOwner} beats={beats} />
-
-      {/* Right: Video Player or Beat Section - Outside main box */}
-      {showBeats ? (
-        <div className={`w-full md:w-96 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
+  const renderMedia = (variant: 'full' | 'short') => {
+    if (showBeats) {
+      return (
+        <div className={`flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow} transition-all`}
+          style={{
+            ...containerStyle,
+            width: '100%',
+          }}>
           <BeatSection beats={beats} isOwner={isOwner} accentColor={accentColor} />
         </div>
-      ) : profile.videos[0] ? (
-        <div className={`w-full md:w-100 flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow}`} style={containerStyle}>
+      )
+    }
+    if (profile.videos[0]) {
+      return (
+        <div className={`flex-shrink-0 p-6 ${styles.card} ${styles.font} ${styles.text} ${styles.glow} transition-all`}
+          style={{
+            ...containerStyle,
+            width: '100%',
+          }}>
           <VideoPlayer video={profile.videos[0]} />
         </div>
-      ) : (
-        /* Empty spacer to balance the left side music section (w-96) so the main card stays centered */
-        <div className="hidden md:block w-96 flex-shrink-0" aria-hidden="true" />
+      )
+    }
+    return null
+  }
+
+  // Render Helpers
+  const renderZone = (zone: 'top' | 'bottom' | 'left' | 'right') => {
+    const isVertical = zone === 'top' || zone === 'bottom'
+    const hasTracks = config.tracks.position === zone
+    const hasMedia = config.media.position === zone && (showBeats || !!profile.videos[0])
+
+    if (!hasTracks && !hasMedia) return null
+
+    // Combined Layout (Both items in same zone)
+    if (hasTracks && hasMedia) {
+      // If vertical zone (Top/Bottom), user requested "Split vertically" -> Side by Side
+      // If side zone (Left/Right), they stack vertically naturally
+
+      if (isVertical) {
+        return (
+          <div className="w-full flex flex-col md:flex-row gap-6 max-w-7xl">
+            <div className="flex-1 w-full min-w-0">
+              {renderTracks(config.tracks.variant)}
+            </div>
+            <div className="flex-1 w-full min-w-0">
+              {renderMedia(config.media.variant)}
+            </div>
+          </div>
+        )
+      }
+
+      // Side zones -> Stacked
+      return (
+        <>
+          <div className="w-full md:w-96">
+            {renderTracks('short')}
+          </div>
+          <div className="w-full md:w-96">
+            {renderMedia('short')}
+          </div>
+        </>
+      )
+    }
+
+    // Single Item Layout
+    const elements = []
+    if (hasTracks) {
+      elements.push(
+        <div key="tracks" className={config.tracks.variant === 'full' ? "w-full md:min-w-[500px]" : "w-full md:w-96"}>
+          {renderTracks(config.tracks.variant)}
+        </div>
+      )
+    }
+
+    if (hasMedia) {
+      elements.push(
+        <div key="media" className={config.media.variant === 'full' ? "w-full md:min-w-[500px]" : "w-full md:w-96"}>
+          {renderMedia(config.media.variant)}
+        </div>
+      )
+    }
+
+    return elements
+  }
+
+  const leftElements = renderZone('left')
+  const rightElements = renderZone('right')
+  const topElements = renderZone('top')
+  const bottomElements = renderZone('bottom')
+
+  return (
+    <div className="relative z-10 w-full max-w-[95vw] mx-auto p-4 flex flex-col items-center gap-6">
+
+      {/* Top Zone */}
+      {topElements && (
+        <div className="w-full flex flex-col items-center gap-6 max-w-7xl">
+          {topElements}
+        </div>
       )}
+
+      {/* Middle Row (Left + Center + Right) */}
+      <div className="flex flex-col md:flex-row gap-6 items-start justify-center w-full">
+        {/* Left Zone */}
+        {leftElements && (
+          <div className="flex flex-col gap-6 flex-shrink-0 w-full md:w-auto items-center">
+            {leftElements}
+          </div>
+        )}
+
+        {/* Main Card */}
+        {/* Added min-w constraint so it doesn't shrink too small */}
+        <div className="flex-shrink-0 w-full md:w-auto flex justify-center md:min-w-[400px]">
+          <ProfileCard username={username} profile={profile} tracks={tracks} isOwner={isOwner} beats={beats} />
+        </div>
+
+        {/* Right Zone */}
+        {rightElements && (
+          <div className="flex flex-col gap-6 flex-shrink-0 w-full md:w-auto items-center">
+            {rightElements}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Zone */}
+      {bottomElements && (
+        <div className="w-full flex flex-col items-center gap-6 max-w-7xl">
+          {bottomElements}
+        </div>
+      )}
+
     </div>
   )
 }

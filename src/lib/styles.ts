@@ -26,7 +26,7 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
                 : "bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl",
             avatar: isLightCard ? "rounded-full border-2 border-neutral-950/20" : "rounded-full border-2 border-white/20",
             font: "",
-            text: isBlackText ? "text-neutral-950" : "text-white",
+            text: isBlackText ? "text-black" : "text-white",
             glow: `shadow-[0_0_20px_rgba(${r},${g},${b},0.2)]`
         },
         brutal: {
@@ -36,7 +36,7 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
                 : "rounded-none bg-black border-4 border-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]",
             avatar: isLightCard ? "rounded-none border-4 border-black" : "rounded-none border-4 border-white",
             font: "font-mono tracking-widest uppercase",
-            text: isBlackText ? "text-neutral-950" : "text-white",
+            text: isBlackText ? "text-black" : "text-white",
             glow: "",
             borderWidth: '4px'
         },
@@ -44,7 +44,7 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
             card: "rounded-xl bg-transparent border-none shadow-none text-center",
             avatar: isLightCard ? "rounded-full border border-neutral-950/20" : "rounded-full border border-white/10",
             font: "font-light tracking-wide",
-            text: isBlackText ? "text-neutral-950" : "text-neutral-200",
+            text: isBlackText ? "text-black" : "text-neutral-200",
             glow: ""
         },
         neon: {
@@ -53,7 +53,7 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
                 : "rounded-xl bg-black/60 backdrop-blur-xl border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]",
             avatar: "rounded-full border-2 shadow-[0_0_15px_rgba(0,0,0,0.3)]",
             font: "font-sans tracking-tight",
-            text: isBlackText ? "text-neutral-950" : "text-white",
+            text: isBlackText ? "text-black" : "text-white",
             glow: "", // Applied inline
             borderWidth: '2px'
         },
@@ -63,7 +63,7 @@ export function getCardStyles(style: string, accentColor: string, textTheme: str
                 : "rounded-[3rem] bg-black/10 backdrop-blur-lg border border-black/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]",
             avatar: isLightCard ? "rounded-[2rem] border-4 border-white/50" : "rounded-[2rem] border-4 border-black/50",
             font: "font-serif italic",
-            text: isBlackText ? "text-neutral-950" : "text-white",
+            text: isBlackText ? "text-black" : "text-white",
             glow: ""
         }
     };

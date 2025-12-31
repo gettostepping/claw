@@ -50,6 +50,7 @@ model Profile {
   blurBackground  Boolean @default(false)
   showViews       Boolean @default(true)
   views           Int     @default(0)
+  layoutConfig    String  @default("{}") // JSON: { tracks: { pos, variant }, media: { pos, variant }, combined: bool }
 
   // Socials
   socialSoundcloud String?

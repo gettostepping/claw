@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom"
 import { useActionState, useState, useRef, useCallback, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AvatarCropper } from "./avatar-cropper"
+import { LayoutEditor } from "./layout-editor"
 
 function SubmitButton({ isUploading }: { isUploading: boolean }) {
   const { pending } = useFormStatus()
@@ -46,7 +47,9 @@ type ProfileType = {
   featuredContent?: string;
   textTheme?: string;
   cardColorMode?: string;
+  layoutConfig?: string;
 };
+
 
 export function ProfileForm({ profile }: { profile: ProfileType }) {
   const [state, formAction] = useActionState(updateProfile, null);
@@ -59,6 +62,10 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatarUrl || null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(profile.bannerUrl || null)
   const [bgType, setBgType] = useState<string>(profile.backgroundType || "color")
+
+  // Layout Link
+  const [isLayoutEditorOpen, setIsLayoutEditorOpen] = useState(false)
+  const [layoutConfig, setLayoutConfig] = useState<string>(profile.layoutConfig || "")
 
   // Cropping State
   const [isCropping, setIsCropping] = useState(false)
@@ -312,7 +319,18 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
         </div>
 
         <div className="space-y-3">
-          <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Featured Content (Right Side)</label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">Featured Content (Right Side)</label>
+            <button
+              type="button"
+              onClick={() => setIsLayoutEditorOpen(true)}
+              className="text-xs flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              <span className="sr-only">Open Layout Editor</span>
+              <span>✨ Edit Layout</span>
+            </button>
+          </div>
+          <input type="hidden" name="layoutConfig" value={layoutConfig} />
           <select
             name="featuredContent"
             defaultValue={profile.featuredContent || "video"}
@@ -500,6 +518,15 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
             Socials
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">SoundCloud</label>
+              <input
+                name="socialSoundcloud"
+                defaultValue={profile.socialSoundcloud || ""}
+                placeholder="SoundCloud Profile URL"
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all font-sans"
+              />
+            </div>
 
             <div className="space-y-3">
               <label className="text-sm font-medium text-neutral-300 uppercase tracking-wider font-sans">YouTube</label>
@@ -554,6 +581,17 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
           />
         )}
       </AnimatePresence>
+
+      {isLayoutEditorOpen && (
+        <LayoutEditor
+          initialConfig={layoutConfig}
+          onSave={(newConfig) => {
+            setLayoutConfig(newConfig)
+            setIsLayoutEditorOpen(false)
+          }}
+          onCancel={() => setIsLayoutEditorOpen(false)}
+        />
+      )}
     </>
   )
 }
