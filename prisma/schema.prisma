@@ -38,6 +38,7 @@ model Profile {
   bio             String?
   avatarUrl       String?
   bannerUrl       String?
+  modelUrl        String?
   backgroundType  String // color | gradient | image | video
   backgroundValue String // hex | css gradient | image url | mp4
   backgroundEffect String  @default("none")

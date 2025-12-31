@@ -29,6 +29,7 @@ type ProfileType = {
   bio?: string | null;
   avatarUrl?: string | null;
   bannerUrl?: string | null;
+  modelUrl?: string | null;
   backgroundType: string;
   backgroundValue: string;
   accentColor: string;
@@ -300,6 +301,44 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
                 <label htmlFor="removeBanner" className="text-sm text-neutral-400">Remove current banner</label>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* 3D Model Upload */}
+        <div className="space-y-4 pt-4 border-t border-neutral-800">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">3D Model</h3>
+            <p className="text-sm text-neutral-400">Upload a .glb file to display on your profile (Max 20MB)</p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex-1 p-3 bg-neutral-900 rounded border border-neutral-800 text-sm">
+              {profile.modelUrl ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-green-400">Model Uploaded</span>
+                  <label className="flex items-center gap-2 cursor-pointer text-red-400 hover:text-red-300">
+                    <input type="checkbox" name="removeModel" className="rounded bg-neutral-800 border-neutral-700" />
+                    Remove Model
+                  </label>
+                </div>
+              ) : (
+                <span className="text-neutral-500">No model uploaded</span>
+              )}
+            </div>
+            <label className="block px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded cursor-pointer text-sm font-medium transition-colors">
+              Upload .glb
+              <input
+                type="file"
+                name="modelFile"
+                accept=".glb"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    // Optional toast
+                  }
+                }}
+              />
+            </label>
           </div>
         </div>
 

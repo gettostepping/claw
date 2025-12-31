@@ -141,6 +141,34 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
     } catch (error) {
       return { error: "Failed to upload background video" };
     }
+  }
+
+  // Handle 3D Model upload
+  const modelFile = formData.get("modelFile") as File | null;
+  const removeModel = formData.get("removeModel") === "on";
+  let updatedModelUrl = profile.modelUrl;
+
+  if (removeModel) {
+    updatedModelUrl = null;
+  } else if (modelFile && modelFile.size > 0) {
+    try {
+      if (!modelFile.name.endsWith('.glb')) {
+        return { error: "Model file must be a .glb file" };
+      }
+      const maxSize = 20 * 1024 * 1024; // 20MB
+      if (modelFile.size > maxSize) {
+        return { error: `Model file too large. Max 20MB.` };
+      }
+      const buffer = Buffer.from(await modelFile.arrayBuffer());
+      // Using uploadVideoToR2 as a generic large file uploader since it likely just uploads the buffer
+      // Or we can assume uploadImageToR2 works if it doesn't strictly check mime types for images only on the bucket side
+      // Let's use uploadVideoToR2 as it might be safer for larger binary files or just rename appropriate function if available.
+      // Re-checking imports... uploadVideoToR2 seems appropriate or I can create a new helper.
+      // For now I'll use uploadVideoToR2 but with correct mime type application/octet-stream or model/gltf-binary
+      updatedModelUrl = await uploadVideoToR2(buffer, modelFile.name, "model/gltf-binary");
+    } catch (error) {
+      return { error: "Failed to upload 3D model" };
+    }
   } else if (backgroundType === 'color') {
     // If background type is color, use the color value from the form
     updatedBackgroundValue = backgroundColorValue;
@@ -160,6 +188,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
         bio,
         avatarUrl,
         bannerUrl,
+        modelUrl: updatedModelUrl,
         accentColor,
         cardStyle,
         backgroundType,

@@ -11,6 +11,7 @@ import { VideoPlayer } from "./video-player"
 import { Eye } from "lucide-react"
 import { PurpleParticlesEffect, GoldenGlowEffect, RainbowEffect, GlitchEffect } from "../effects/name-effects"
 import { getCardStyles } from "@/lib/styles"
+import { ModelViewer } from "./model-viewer"
 
 function TenorAvatar({ url, mp4Url, isGif, username }: { url: string; mp4Url: string; isGif: boolean; username: string }) {
   const [useGif, setUseGif] = useState(false)
@@ -95,6 +96,7 @@ interface ProfileCardProps {
     nameEffect?: string
     featuredContent?: string
     layoutConfig?: string
+    modelUrl?: string | null
   }
   tracks: {
     id: string
@@ -137,6 +139,8 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3 }}
     >
+
+
       {profile.showViews && (
         <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/20 backdrop-blur-md border border-white/5 text-[10px] font-mono opacity-60 hover:opacity-100 transition-opacity">
           <Eye size={12} className="text-neutral-400" />
@@ -250,6 +254,12 @@ export function ProfileCard({ username, profile, tracks, isOwner }: ProfileCardP
           spotify={profile.socialSpotify}
           discord={profile.socialDiscord}
         />
+
+        {profile.modelUrl && (
+          <div className="w-full mt-4">
+            <ModelViewer url={profile.modelUrl} />
+          </div>
+        )}
 
         {
           profile.musicEmbeds.filter((embed) => embed.type !== "youtube").map((embed) => (
