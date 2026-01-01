@@ -58,6 +58,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
   const [isActionPending, startTransition] = useTransition();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null)
+  const [modelFileName, setModelFileName] = useState<string | null>(null)
 
   // Previews & State
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatarUrl || null)
@@ -313,7 +314,9 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
 
           <div className="flex items-center gap-4">
             <div className="flex-1 p-3 bg-neutral-900 rounded border border-neutral-800 text-sm">
-              {profile.modelUrl ? (
+              {modelFileName ? (
+                <span className="text-purple-400">{modelFileName}</span>
+              ) : profile.modelUrl ? (
                 <div className="flex items-center justify-between">
                   <span className="text-green-400">Model Uploaded</span>
                   <label className="flex items-center gap-2 cursor-pointer text-red-400 hover:text-red-300">
@@ -334,7 +337,7 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files?.[0]) {
-                    // Optional toast
+                    setModelFileName(e.target.files[0].name)
                   }
                 }}
               />
