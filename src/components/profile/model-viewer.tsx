@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 declare global {
     namespace JSX {
@@ -27,12 +27,15 @@ declare global {
 export function ModelViewer({ url }: { url: string }) {
     const modelViewerRef = useRef<HTMLElement>(null);
 
+    const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
+        setMounted(true);
         // Dynamic import to avoid SSR issues with web components
         import("@google/model-viewer").catch(console.error);
     }, []);
 
-    if (!url) return null
+    if (!url || !mounted) return null
 
     return (
         <div className="w-full h-[400px] relative rounded-xl overflow-hidden bg-black/20 backdrop-blur-sm border border-white/10">
