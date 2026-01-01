@@ -7,9 +7,10 @@ export function CustomCursor() {
     const cursorX = useMotionValue(-100)
     const cursorY = useMotionValue(-100)
 
-    const springConfig = { damping: 25, stiffness: 700 }
-    const cursorXSpring = useSpring(cursorX, springConfig)
-    const cursorYSpring = useSpring(cursorY, springConfig)
+    // Use motion values directly for instant follow
+    // const springConfig = { damping: 25, stiffness: 700 }
+    // const cursorXSpring = useSpring(cursorX, springConfig)
+    // const cursorYSpring = useSpring(cursorY, springConfig)
 
     const [isPointer, setIsPointer] = useState(false)
     const [isClicking, setIsClicking] = useState(false)
@@ -49,8 +50,8 @@ export function CustomCursor() {
         <motion.div
             className="fixed top-0 left-0 pointer-events-none z-[99999] mix-blend-screen"
             style={{
-                translateX: cursorXSpring,
-                translateY: cursorYSpring,
+                translateX: cursorX,
+                translateY: cursorY,
             }}
         >
             {/* Custom GIF Cursor */}
