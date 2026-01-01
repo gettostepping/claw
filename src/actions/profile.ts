@@ -28,6 +28,7 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
   const avatarUrlDirect = formData.get("avatarUrlDirect") as string | null
   const bannerUrlDirect = formData.get("bannerUrlDirect") as string | null
   const backgroundUrlDirect = formData.get("backgroundUrlDirect") as string | null
+  const modelUrlDirect = formData.get("modelUrlDirect") as string | null
   const accentColor = formData.get("accentColor") as string
   const cardStyle = formData.get("cardStyle") as string
   const backgroundType = formData.get("backgroundType") as string
@@ -150,6 +151,8 @@ export async function updateProfile(prevState: unknown, formData: FormData) {
 
   if (removeModel) {
     updatedModelUrl = null;
+  } else if (modelUrlDirect) {
+    updatedModelUrl = modelUrlDirect;
   } else if (modelFile && modelFile.size > 0) {
     try {
       if (!modelFile.name.endsWith('.glb')) {
