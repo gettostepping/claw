@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { AvatarCropper } from "./avatar-cropper"
 import { LayoutEditor } from "./layout-editor"
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_MODEL_SIZE = 50 * 1024 * 1024; // 50MB
+
 function SubmitButton({ isUploading }: { isUploading: boolean }) {
   const { pending } = useFormStatus()
   return (
@@ -77,6 +80,11 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        alert("Avatar image must be less than 5MB");
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader()
       reader.onloadend = () => {
         setImageToCrop(reader.result as string)
@@ -95,6 +103,11 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        alert("Banner image must be less than 5MB");
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader()
       reader.onloadend = () => setBannerPreview(reader.result as string)
       reader.readAsDataURL(file)
@@ -142,18 +155,27 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
         formData.append("avatarUrlDirect", url);
         formData.delete("avatarFile");
       } else {
-        setUploadError("Failed to upload cropped avatar.");
+        setUploadError("Failed to upload cropped avatar. Please try again.");
         setIsUploading(false);
         return;
       }
     } else {
-      // Original avatar file if not cropped (though we prompt for crop now)
+      // Original avatar file if not cropped
       const avatarFile = formData.get("avatarFile") as File | null;
       if (avatarFile && avatarFile.size > 0) {
+        if (avatarFile.size > MAX_IMAGE_SIZE) {
+          setUploadError("Avatar file too large (Max 5MB).");
+          setIsUploading(false);
+          return;
+        }
         const url = await handleFileUpload(avatarFile, avatarFile.name, avatarFile.type, 'images');
         if (url) {
           formData.append("avatarUrlDirect", url);
           formData.delete("avatarFile");
+        } else {
+          setUploadError("Failed to upload avatar. Direct upload failed.");
+          setIsUploading(false);
+          return;
         }
       }
     }
@@ -161,8 +183,14 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
     const bannerFile = formData.get("bannerFile") as File | null;
     const bgImageFile = formData.get("backgroundFileImage") as File | null;
     const bgVideoFile = formData.get("backgroundFileVideo") as File | null;
+    const modelFile = formData.get("modelFile") as File | null;
 
     if (bannerFile && bannerFile.size > 0) {
+      if (bannerFile.size > MAX_IMAGE_SIZE) {
+        setUploadError("Banner file too large (Max 5MB).");
+        setIsUploading(false);
+        return;
+      }
       const url = await handleFileUpload(bannerFile, bannerFile.name, bannerFile.type, 'images');
       if (url) {
         formData.append("bannerUrlDirect", url);
@@ -174,7 +202,29 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
       }
     }
 
+    if (modelFile && modelFile.size > 0) {
+      if (modelFile.size > MAX_MODEL_SIZE) {
+        setUploadError("Model file too large (Max 50MB).");
+        setIsUploading(false);
+        return;
+      }
+      const url = await handleFileUpload(modelFile, modelFile.name, 'model/gltf-binary', 'images'); // Using 'images' folder for now or change to 'models' if supported
+      if (url) {
+        formData.append("modelUrlDirect", url); // Ensure your server action handles this field
+        formData.delete("modelFile");
+      } else {
+        setUploadError("Failed to upload 3D model.");
+        setIsUploading(false);
+        return;
+      }
+    }
+
     if (bgType === 'image' && bgImageFile && bgImageFile.size > 0) {
+      if (bgImageFile.size > MAX_IMAGE_SIZE) {
+        setUploadError("Background image too large (Max 5MB).");
+        setIsUploading(false);
+        return;
+      }
       const url = await handleFileUpload(bgImageFile, bgImageFile.name, bgImageFile.type, 'images');
       if (url) {
         formData.append("backgroundUrlDirect", url);
@@ -185,6 +235,13 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
         return;
       }
     } else if (bgType === 'video' && bgVideoFile && bgVideoFile.size > 0) {
+      // Video might have different limit, keeping as is for now or applying model limit?
+      // Let's apply 50MB for video too
+      if (bgVideoFile.size > MAX_MODEL_SIZE) {
+        setUploadError("Background video too large (Max 50MB).");
+        setIsUploading(false);
+        return;
+      }
       const url = await handleFileUpload(bgVideoFile, bgVideoFile.name, bgVideoFile.type, 'videos');
       if (url) {
         formData.append("backgroundUrlDirect", url);
@@ -336,8 +393,15 @@ export function ProfileForm({ profile }: { profile: ProfileType }) {
                 accept=".glb"
                 className="hidden"
                 onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setModelFileName(e.target.files[0].name)
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > MAX_MODEL_SIZE) {
+                      alert("Model file must be less than 50MB");
+                      e.target.value = "";
+                      setModelFileName(null);
+                      return;
+                    }
+                    setModelFileName(file.name)
                   }
                 }}
               />
